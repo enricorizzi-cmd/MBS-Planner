@@ -1,16 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Calendar, 
-  Plus, 
-  Search, 
   Settings, 
   Download,
   Users,
   MapPin,
-  Clock,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
@@ -199,7 +196,7 @@ export function DispositionPage() {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <DispositionControls
-              layout={currentLayout}
+              layout={currentLayout || null}
               onAddRow={addRow}
               onChangeLayout={changeLayout}
               onGenerate={handleGenerateDisposition}
@@ -216,7 +213,7 @@ export function DispositionPage() {
             <DispositionGrid
               seats={seats}
               bookings={bookings}
-              layout={currentLayout}
+              layout={currentLayout || null}
               onSeatUpdate={updateSeat}
               loading={loading}
             />

@@ -11,7 +11,6 @@ import {
   Calendar,
   Users,
   BookOpen,
-  Building2,
   CheckCircle,
   Clock,
   AlertCircle
@@ -25,13 +24,7 @@ export function ListPage() {
   
   const {
     sessions,
-    bookings,
-    students,
-    manuals,
-    loading,
-    createBooking,
-    updateBooking,
-    deleteBooking
+    bookings
   } = useBookings(selectedSession);
 
   const filteredBookings = bookings.filter(booking => {

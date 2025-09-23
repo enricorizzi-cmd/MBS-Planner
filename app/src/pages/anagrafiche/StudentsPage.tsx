@@ -17,9 +17,6 @@ import {
   Crown,
   Briefcase,
   Euro,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle
 } from 'lucide-react';
 import { useStudents } from '@/hooks/useStudents';
 import { useRevenues } from '@/hooks/useRevenues';
@@ -33,19 +30,11 @@ export function StudentsPage() {
   
   const {
     students,
-    studentCompanies,
-    loading,
-    createStudent,
-    updateStudent,
-    deleteStudent,
-    addCompanyToStudent,
-    removeCompanyFromStudent,
-    updateStudentRole
+    studentCompanies
   } = useStudents();
 
   const {
-    lastMonthData,
-    loading: revenueLoading
+    lastMonthData
   } = useRevenues(selectedCompanyForRevenue?.id || '');
 
   const filteredStudents = students.filter(student =>

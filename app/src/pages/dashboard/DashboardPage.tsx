@@ -136,7 +136,7 @@ export function DashboardPage() {
                   { name: 'Nuova Azienda', href: '/anagrafiche/aziende', icon: Building2 },
                   { name: 'Programma', href: '/programmazione/lista', icon: Calendar },
                   { name: 'Calendario', href: '/programmazione/calendario', icon: Calendar },
-                ].map((action, index) => (
+                ].map((action) => (
                   <a
                     key={action.name}
                     href={action.href}
