@@ -1,9 +1,23 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../index.js';
+import { config } from '../config.js';
 import { authenticate, type AuthenticatedRequest } from '../middleware/auth.js';
 import { CustomError } from '../middleware/errorHandler.js';
 import { loginSchema, registerSchema, changePasswordSchema } from '../schemas/auth.js';
+
+// Create admin client with service role key for bypassing RLS
+const adminSupabase = createClient(
+  config.supabase.url,
+  config.supabase.serviceRoleKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 const router = Router();
 
@@ -115,10 +129,42 @@ router.post('/change-password', authenticate, async (req: AuthenticatedRequest, 
   }
 });
 
+// Test database connection
+router.get('/test-db', async (req, res, next) => {
+  try {
+    console.log('🔍 Testing database connection...');
+    
+    // Test basic connection with admin client
+    const { data, error } = await adminSupabase
+      .from('partners')
+      .select('count')
+      .limit(1);
+
+    if (error) {
+      console.error('❌ Database connection test failed:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        details: error 
+      });
+    }
+
+    console.log('✅ Database connection test successful');
+    return res.json({ 
+      success: true, 
+      message: 'Database connection successful',
+      data 
+    });
+  } catch (error) {
+    console.error('❌ Unexpected error in test-db:', error);
+    return next(error);
+  }
+});
+
 // Get partners for registration
 router.get('/partners', async (req, res, next) => {
   try {
-    const { data: partners, error } = await supabase
+    const { data: partners, error } = await adminSupabase
       .from('partners')
       .select('id, name')
       .order('name');
@@ -136,30 +182,40 @@ router.get('/partners', async (req, res, next) => {
 // Temporary: Seed a demo partner for first-time setup
 router.post('/partners/seed', async (req, res, next) => {
   try {
-    const { data: existingPartners, error: existingError } = await supabase
+    console.log('🔍 Checking existing partners...');
+    
+    const { data: existingPartners, error: existingError } = await adminSupabase
       .from('partners')
       .select('id')
       .limit(1);
 
     if (existingError) {
-      throw new CustomError('Errore nel controllo dei partner esistenti', 500);
+      console.error('❌ Error checking existing partners:', existingError);
+      throw new CustomError(`Errore nel controllo dei partner esistenti: ${existingError.message}`, 500);
     }
+
+    console.log('✅ Existing partners check successful:', existingPartners);
 
     if (existingPartners && existingPartners.length > 0) {
       return res.json({ created: false, message: 'Partner già presenti' });
     }
 
-    const { data: inserted, error: insertError } = await supabase
+    console.log('🔧 Creating demo partner...');
+    
+    const { data: inserted, error: insertError } = await adminSupabase
       .from('partners')
       .insert([{ name: 'Partner Demo' }])
       .select('id, name');
 
     if (insertError) {
-      throw new CustomError('Errore nella creazione del partner di test', 500);
+      console.error('❌ Error creating demo partner:', insertError);
+      throw new CustomError(`Errore nella creazione del partner di test: ${insertError.message}`, 500);
     }
 
+    console.log('✅ Demo partner created successfully:', inserted);
     return res.status(201).json({ created: true, partners: inserted });
   } catch (error) {
+    console.error('❌ Unexpected error in partners/seed:', error);
     return next(error);
   }
 });
