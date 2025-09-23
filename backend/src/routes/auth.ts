@@ -160,7 +160,7 @@ router.post('/partners/seed', async (req, res, next) => {
 
     return res.status(201).json({ created: true, partners: inserted });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
