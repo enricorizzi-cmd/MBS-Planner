@@ -151,7 +151,7 @@ router.post('/', authenticate, requireAdmin, async (req, res, next) => {
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: userData.email,
       password: 'temp_password_123', // User will need to change this
-      email_confirm: true,
+      email_confirm: false,
     });
 
     if (authError) {
