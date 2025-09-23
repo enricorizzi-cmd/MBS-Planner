@@ -4,9 +4,18 @@ const configSchema = z.object({
   port: z.coerce.number().default(3001),
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   supabase: z.object({
-    url: z.string().url(),
-    anonKey: z.string(),
-    serviceRoleKey: z.string(),
+    url: z.string().url().refine((url) => {
+      // Ensure it's a Supabase URL, not a PostgreSQL connection string
+      if (url.startsWith('postgresql://')) {
+        throw new Error('SUPABASE_URL must be the Supabase API URL (https://your-project.supabase.co), not a PostgreSQL connection string');
+      }
+      if (!url.includes('supabase.co')) {
+        throw new Error('SUPABASE_URL must be a valid Supabase URL (https://your-project.supabase.co)');
+      }
+      return true;
+    }),
+    anonKey: z.string().min(1, 'SUPABASE_ANON_KEY is required'),
+    serviceRoleKey: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
   }),
   cors: z.object({
     origin: z.union([z.string().url(), z.array(z.string().url())]).default('http://localhost:3000'),
@@ -44,7 +53,30 @@ const rawConfig = {
   },
 };
 
-export const config = configSchema.parse(rawConfig);
+let config: z.infer<typeof configSchema>;
 
+try {
+  config = configSchema.parse(rawConfig);
+} catch (error) {
+  console.error('❌ Configuration validation failed:');
+  if (error instanceof z.ZodError) {
+    error.errors.forEach((err) => {
+      console.error(`  - ${err.path.join('.')}: ${err.message}`);
+    });
+  } else {
+    console.error(`  - ${error.message}`);
+  }
+  console.error('\n💡 Please check your environment variables and ensure they are correctly set.');
+  console.error('   Required environment variables:');
+  console.error('   - SUPABASE_URL (must be https://your-project.supabase.co)');
+  console.error('   - SUPABASE_ANON_KEY');
+  console.error('   - SUPABASE_SERVICE_ROLE_KEY');
+  console.error('   - VAPID_PUBLIC_KEY');
+  console.error('   - VAPID_PRIVATE_KEY');
+  console.error('   - VAPID_SUBJECT');
+  process.exit(1);
+}
+
+export { config };
 export type Config = z.infer<typeof configSchema>;
 
