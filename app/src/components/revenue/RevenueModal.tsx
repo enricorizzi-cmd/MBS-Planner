@@ -31,7 +31,6 @@ export function RevenueModal({ isOpen, onClose, companyId, companyName }: Revenu
   const [newNotes, setNewNotes] = useState<string>('');
 
   const {
-    revenues,
     monthlyData,
     annualData,
     createRevenue,

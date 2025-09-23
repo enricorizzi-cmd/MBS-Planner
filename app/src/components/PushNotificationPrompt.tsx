@@ -8,7 +8,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 export function PushNotificationPrompt() {
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
-  const { isSupported, isSubscribed, isLoading, error, subscribe, unsubscribe } = usePushNotifications();
+  const { isSupported, isSubscribed, isLoading, error, subscribe } = usePushNotifications();
 
   useEffect(() => {
     // Show prompt if supported, not subscribed, and not dismissed

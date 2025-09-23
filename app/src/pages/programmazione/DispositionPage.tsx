@@ -25,14 +25,12 @@ export function DispositionPage() {
     sessions,
     currentLayout,
     seats,
-    bookings,
     stats,
     generateDisposition,
     updateSeat,
     addRow,
     changeLayout,
-    printDisposition,
-    loading
+    printDisposition
   } = useDisposition(selectedSession, selectedDay);
 
   const handleGenerateDisposition = async () => {
@@ -212,10 +210,8 @@ export function DispositionPage() {
           >
             <DispositionGrid
               seats={seats}
-              bookings={bookings}
               layout={currentLayout || null}
               onSeatUpdate={updateSeat}
-              loading={loading}
             />
           </motion.div>
         </>
