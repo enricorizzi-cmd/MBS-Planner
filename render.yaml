@@ -1,0 +1,59 @@
+services:
+  # Backend API Service
+  - type: web
+    name: mbs-planner-backend
+    env: node
+    plan: starter
+    region: oregon
+    buildCommand: cd backend && npm ci && npm run build
+    startCommand: cd backend && npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: SUPABASE_URL
+        fromDatabase:
+          name: supabase
+          property: connectionString
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://mbs-planner.onrender.com
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        value: mailto:admin@mbsplanner.com
+      - key: SENTRY_DSN
+        sync: false
+
+  # Frontend Static Site
+  - type: web
+    name: mbs-planner-frontend
+    env: static
+    plan: starter
+    region: oregon
+    buildCommand: cd app && npm ci && npm run build
+    staticPublishPath: ./app/dist
+    envVars:
+      - key: VITE_SUPABASE_URL
+        fromService:
+          type: web
+          name: mbs-planner-backend
+          envVarKey: SUPABASE_URL
+      - key: VITE_SUPABASE_ANON_KEY
+        fromService:
+          type: web
+          name: mbs-planner-backend
+          envVarKey: SUPABASE_ANON_KEY
+
+databases:
+  - name: supabase
+    plan: free
+    region: oregon
+

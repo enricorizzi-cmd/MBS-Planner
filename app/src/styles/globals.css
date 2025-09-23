@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 6%;
+    --foreground: 0 0% 95%;
+    --card: 210 40% 8%;
+    --card-foreground: 0 0% 95%;
+    --popover: 210 40% 8%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 188 100% 50%;
+    --primary-foreground: 210 40% 6%;
+    --secondary: 262 83% 58%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 210 40% 12%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 210 40% 12%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 210 40% 18%;
+    --input: 210 40% 18%;
+    --ring: 188 100% 50%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .card-gaming {
+    @apply bg-dark-card border border-dark-border rounded-2xl shadow-xl backdrop-blur-sm;
+  }
+  
+  .btn-neon {
+    @apply bg-neon-primary text-dark-bg font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-neon-primary/25 transition-all duration-200 hover:scale-105;
+  }
+  
+  .btn-neon-secondary {
+    @apply bg-neon-secondary text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-neon-secondary/25 transition-all duration-200 hover:scale-105;
+  }
+  
+  .text-neon {
+    @apply text-neon-primary;
+  }
+  
+  .border-neon {
+    @apply border-neon-primary;
+  }
+  
+  .bg-gradient-gaming {
+    background: linear-gradient(135deg, #0b0f19 0%, #1a1f2e 50%, #0b0f19 100%);
+  }
+  
+  .bg-gradient-neon {
+    background: linear-gradient(135deg, #00e5ff 0%, #7c3aed 100%);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-neon-primary/50;
+}
+
+/* Focus styles */
+.focus-visible {
+  @apply outline-none ring-2 ring-neon-primary ring-offset-2 ring-offset-dark-bg;
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-pulse-neon {
+  animation: pulse-neon 2s ease-in-out infinite;
+}
+
