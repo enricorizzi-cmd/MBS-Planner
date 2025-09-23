@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search, Users, Shield, UserCheck, Crown } from 'lucide-react';
 
 export function UsersPage() {
+  const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
@@ -51,7 +54,10 @@ export function UsersPage() {
               Gestione utenti e permessi
             </p>
           </div>
-          <Button className="btn-neon">
+          <Button 
+            className="btn-neon"
+            onClick={() => setIsNewUserModalOpen(true)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Nuovo Utente
           </Button>
@@ -163,6 +169,31 @@ export function UsersPage() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* New User Modal */}
+      {isNewUserModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-background border border-border rounded-xl p-6 w-full max-w-md"
+          >
+            <h2 className="text-xl font-bold text-foreground mb-4">Nuovo Utente</h2>
+            <p className="text-muted-foreground mb-4">
+              Funzionalità in sviluppo. Il form per creare un nuovo utente sarà disponibile presto.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsNewUserModalOpen(false)}
+              >
+                Chiudi
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

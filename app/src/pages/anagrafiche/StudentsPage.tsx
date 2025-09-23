@@ -25,6 +25,7 @@ export function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const [selectedCompanyForRevenue, setSelectedCompanyForRevenue] = useState<{id: string, name: string} | null>(null);
+  const [isNewStudentModalOpen, setIsNewStudentModalOpen] = useState(false);
   
   const {
     students,
@@ -64,7 +65,10 @@ export function StudentsPage() {
               Gestione anagrafica studenti
             </p>
           </div>
-          <Button className="btn-neon">
+          <Button 
+            className="btn-neon"
+            onClick={() => setIsNewStudentModalOpen(true)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Nuovo Studente
           </Button>
@@ -298,6 +302,31 @@ export function StudentsPage() {
           companyId={selectedCompanyForRevenue.id}
           companyName={selectedCompanyForRevenue.name}
         />
+      )}
+
+      {/* New Student Modal */}
+      {isNewStudentModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-background border border-border rounded-xl p-6 w-full max-w-md"
+          >
+            <h2 className="text-xl font-bold text-foreground mb-4">Nuovo Studente</h2>
+            <p className="text-muted-foreground mb-4">
+              Funzionalità in sviluppo. Il form per creare un nuovo studente sarà disponibile presto.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsNewStudentModalOpen(false)}
+              >
+                Chiudi
+              </Button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );
