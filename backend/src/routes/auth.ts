@@ -168,6 +168,178 @@ router.get('/test-db', async (req, res, next) => {
   }
 });
 
+// Check configuration
+router.get('/config-check', async (req, res, next) => {
+  try {
+    const configInfo = {
+      supabaseUrl: config.supabase.url,
+      hasAnonKey: !!config.supabase.anonKey,
+      hasServiceKey: !!config.supabase.serviceRoleKey,
+      serviceKeyLength: config.supabase.serviceRoleKey?.length || 0,
+      anonKeyLength: config.supabase.anonKey?.length || 0,
+      nodeEnv: config.nodeEnv,
+      port: config.port
+    };
+    
+    console.log('🔧 Configuration check:', configInfo);
+    
+    return res.json({
+      success: true,
+      config: configInfo,
+      issues: []
+    });
+  } catch (error) {
+    console.error('❌ Error checking configuration:', error);
+    return next(error);
+  }
+});
+
+// Create database structure
+router.post('/create-db', async (req, res, next) => {
+  try {
+    console.log('🚀 Creating database structure...');
+    
+    // Try to create partners table using raw SQL
+    const createTableSQL = `
+      CREATE TABLE IF NOT EXISTS partners (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `;
+    
+    // Execute raw SQL
+    const { data: createResult, error: createError } = await adminSupabase
+      .rpc('exec_sql', { sql: createTableSQL });
+    
+    if (createError) {
+      console.error('❌ Error creating partners table:', createError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to create partners table',
+        details: createError
+      });
+    }
+    
+    console.log('✅ Partners table created successfully');
+    
+    // Insert demo partner
+    const { data: inserted, error: insertError } = await adminSupabase
+      .from('partners')
+      .insert([{ name: 'Partner Demo' }])
+      .select('id, name');
+    
+    if (insertError) {
+      console.error('❌ Error inserting demo partner:', insertError);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to insert demo partner',
+        details: insertError
+      });
+    }
+    
+    console.log('✅ Demo partner inserted successfully');
+    
+    return res.json({
+      success: true,
+      message: 'Database structure created successfully',
+      partners: inserted
+    });
+    
+  } catch (error) {
+    console.error('❌ Database creation failed:', error);
+    return next(error);
+  }
+});
+
+// Debug database structure
+router.get('/debug-db', async (req, res, next) => {
+  try {
+    console.log('🔍 Debugging database structure...');
+    
+    // Test 1: Check if we can connect to Supabase at all
+    const { data: healthCheck, error: healthError } = await adminSupabase
+      .from('_supabase_migrations')
+      .select('version')
+      .limit(1);
+    
+    if (healthError) {
+      console.error('❌ Cannot connect to Supabase:', healthError);
+      return res.status(500).json({
+        success: false,
+        step: 'health_check',
+        error: healthError.message,
+        details: healthError
+      });
+    }
+    
+    console.log('✅ Supabase connection successful');
+    
+    // Test 2: Check if partners table exists
+    const { data: tableCheck, error: tableError } = await adminSupabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_name', 'partners')
+      .eq('table_schema', 'public');
+    
+    if (tableError) {
+      console.error('❌ Cannot check table existence:', tableError);
+      return res.status(500).json({
+        success: false,
+        step: 'table_check',
+        error: tableError.message,
+        details: tableError
+      });
+    }
+    
+    console.log('✅ Table check successful:', tableCheck);
+    
+    if (!tableCheck || tableCheck.length === 0) {
+      return res.status(404).json({
+        success: false,
+        step: 'table_exists',
+        error: 'Partners table does not exist',
+        suggestion: 'Run database migrations'
+      });
+    }
+    
+    // Test 3: Try to select from partners table
+    const { data: partnersData, error: partnersError } = await adminSupabase
+      .from('partners')
+      .select('*')
+      .limit(1);
+    
+    if (partnersError) {
+      console.error('❌ Cannot select from partners table:', partnersError);
+      return res.status(500).json({
+        success: false,
+        step: 'select_partners',
+        error: partnersError.message,
+        details: partnersError,
+        rlsError: partnersError.message.includes('RLS') || partnersError.message.includes('policy')
+      });
+    }
+    
+    console.log('✅ Partners table access successful:', partnersData);
+    
+    return res.json({
+      success: true,
+      message: 'Database structure is correct',
+      data: {
+        supabaseConnected: true,
+        partnersTableExists: true,
+        canAccessPartners: true,
+        partnersCount: partnersData?.length || 0
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Unexpected error in debug-db:', error);
+    return next(error);
+  }
+});
+
 // Get partners for registration
 router.get('/partners', async (req, res, next) => {
   try {
