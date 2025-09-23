@@ -94,7 +94,7 @@ export interface DispositionStats {
   manualStats: Record<string, number>;
 }
 
-export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
+export function useDisposition(__sessionId: string | null, __dayIndex: 1 | 2) {
   const { } = useAuth();
   const queryClient = useQueryClient();
 
@@ -118,9 +118,9 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
 
   // Fetch current session details
   const { data: currentSession } = useQuery({
-    queryKey: ['session', sessionId],
+    queryKey: ['session', _sessionId],
     queryFn: async () => {
-      if (!sessionId) return null;
+      if (!_sessionId) return null;
       
       const { data, error } = await supabase
         .from('sessions')
@@ -128,38 +128,38 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
           *,
           days:session_days(*)
         `)
-        .eq('id', sessionId)
+        .eq('id', _sessionId)
         .single();
 
       if (error) throw error;
       return data as Session;
     },
-    enabled: !!sessionId,
+    enabled: !!_sessionId,
   });
 
   // Fetch layout
   const { data: currentLayout } = useQuery({
-    queryKey: ['layout', sessionId],
+    queryKey: ['layout', _sessionId],
     queryFn: async () => {
-      if (!sessionId) return null;
+      if (!_sessionId) return null;
       
       const { data, error } = await supabase
         .from('layouts')
         .select('*')
-        .eq('session_id', sessionId)
+        .eq('session_id', _sessionId)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
       return data as Layout | null;
     },
-    enabled: !!sessionId,
+    enabled: !!_sessionId,
   });
 
   // Fetch seats for current day
   const { data: seats = [], isLoading: loading } = useQuery({
-    queryKey: ['seats', sessionId, dayIndex],
+    queryKey: ['seats', _sessionId, _dayIndex],
     queryFn: async () => {
-      if (!sessionId) return [];
+      if (!_sessionId) return [];
       
       const { data, error } = await supabase
         .from('seats')
@@ -172,21 +172,21 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
           ),
           reservation_student:students(*)
         `)
-        .eq('session_day_id', currentSession?.days?.find(d => d.day_index === dayIndex)?.id)
+        .eq('session_day_id', currentSession?.days?.find(d => d.day_index === _dayIndex)?.id)
         .order('row_letter')
         .order('column_number');
 
       if (error) throw error;
       return data as Seat[];
     },
-    enabled: !!sessionId && !!currentSession?.days,
+    enabled: !!_sessionId && !!currentSession?.days,
   });
 
   // Fetch bookings for current day
   const { data: bookings = [] } = useQuery({
-    queryKey: ['bookings', sessionId, dayIndex],
+    queryKey: ['bookings', _sessionId, _dayIndex],
     queryFn: async () => {
-      if (!sessionId) return [];
+      if (!_sessionId) return [];
       
       const { data, error } = await supabase
         .from('bookings')
@@ -195,13 +195,13 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
           student:students(*),
           manual:manuals(*)
         `)
-        .eq('session_day_id', currentSession?.days?.find(d => d.day_index === dayIndex)?.id)
+        .eq('session_day_id', currentSession?.days?.find(d => d.day_index === _dayIndex)?.id)
         .eq('status', 'confirmed');
 
       if (error) throw error;
       return data as Booking[];
     },
-    enabled: !!sessionId && !!currentSession?.days,
+    enabled: !!_sessionId && !!currentSession?.days,
   });
 
   // Calculate stats
@@ -245,17 +245,17 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
 
   // Generate disposition mutation
   const generateDispositionMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
+    mutationFn: async (_sessionId: string) => {
       const { data, error } = await supabase.functions.invoke('generate-disposition', {
-        body: { session_id: sessionId }
+        body: { session_id: _sessionId }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', _sessionId, _dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', _sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', __sessionId, __dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', __sessionId] });
     },
   });
 
@@ -273,44 +273,44 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', sessionId, dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['seats', _sessionId, _dayIndex] });
     },
   });
 
   // Add row mutation
   const addRowMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
+    mutationFn: async (_sessionId: string) => {
       const { data, error } = await supabase.functions.invoke('add-row', {
-        body: { session_id: sessionId }
+        body: { session_id: _sessionId }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', _sessionId, _dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', _sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', __sessionId, __dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', __sessionId] });
     },
   });
 
   // Change layout mutation
   const changeLayoutMutation = useMutation({
-    mutationFn: async ({ sessionId, seatsPerBlock }: { sessionId: string; seatsPerBlock: number }) => {
+    mutationFn: async ({ _sessionId, seatsPerBlock }: { _sessionId: string; seatsPerBlock: number }) => {
       const { data, error } = await supabase.functions.invoke('change-layout', {
-        body: { session_id: sessionId, seats_per_block: seatsPerBlock }
+        body: { session_id: _sessionId, seats_per_block: seatsPerBlock }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', _sessionId, _dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', _sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', __sessionId, __dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', __sessionId] });
     },
   });
 
   // Print disposition
-  const printDisposition = (_sessionId: string, _dayIndex: 1 | 2) => {
+  const printDisposition = (__sessionId: string, __dayIndex: 1 | 2) => {
     // This would typically open a print dialog or generate a PDF
     window.print();
   };

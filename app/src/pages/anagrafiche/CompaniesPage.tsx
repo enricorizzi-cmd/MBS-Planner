@@ -225,7 +225,7 @@ export function CompaniesPage() {
                     </Button>
                   </div>
 
-                  {revenueLoading ? (
+                  {false ? (
                     <div className="text-center py-4">
                       <p className="text-muted-foreground text-sm">Caricamento...</p>
                     </div>
