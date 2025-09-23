@@ -162,15 +162,13 @@ router.put('/:id', authenticate, async (req: AuthenticatedRequest, res, next) =>
       query = query.eq('partner_id', req.user!.partner_id);
     }
 
-    query = query.select(`
+    const { data, error } = await query.select(`
       *,
       partners:partner_id (
         id,
         name
       )
-    `);
-
-    const { data, error } = await query.single();
+    `).single();
 
     if (error) {
       throw new CustomError('Errore nell\'aggiornamento dello studente', 500);
