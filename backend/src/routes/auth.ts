@@ -133,6 +133,37 @@ router.get('/partners', async (req, res, next) => {
   }
 });
 
+// Temporary: Seed a demo partner for first-time setup
+router.post('/partners/seed', async (req, res, next) => {
+  try {
+    const { data: existingPartners, error: existingError } = await supabase
+      .from('partners')
+      .select('id')
+      .limit(1);
+
+    if (existingError) {
+      throw new CustomError('Errore nel controllo dei partner esistenti', 500);
+    }
+
+    if (existingPartners && existingPartners.length > 0) {
+      return res.json({ created: false, message: 'Partner già presenti' });
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('partners')
+      .insert([{ name: 'Partner Demo' }])
+      .select('id, name');
+
+    if (insertError) {
+      throw new CustomError('Errore nella creazione del partner di test', 500);
+    }
+
+    return res.status(201).json({ created: true, partners: inserted });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Register new user
 router.post('/register', async (req, res, next) => {
   try {
