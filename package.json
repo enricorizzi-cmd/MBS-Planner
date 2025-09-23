@@ -19,8 +19,7 @@
     "lint:backend": "cd backend && npm run lint",
     "format": "prettier --write .",
     "prepare": "husky install",
-    "install:all": "npm install && cd app && npm install && cd ../backend && npm install",
-    "postinstall": "npm run install:all"
+    "install:all": "npm install && cd app && npm install && cd ../backend && npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

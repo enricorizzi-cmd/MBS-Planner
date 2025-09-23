@@ -25,9 +25,7 @@ COPY app/package*.json ./app/
 COPY backend/package*.json ./backend/
 
 # Install all dependencies (including dev)
-RUN npm install && \
-    cd app && npm install && \
-    cd ../backend && npm install
+RUN npm run install:all
 
 # Copy source code
 COPY . .
