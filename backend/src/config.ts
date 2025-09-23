@@ -14,7 +14,9 @@ const configSchema = z.object({
   vapid: z.object({
     publicKey: z.string(),
     privateKey: z.string(),
-    subject: z.string().email(),
+    subject: z.string().refine((val) => val.startsWith('mailto:') && val.includes('@'), {
+      message: "Subject must be in format 'mailto:email@domain.com'"
+    }),
   }),
   sentry: z.object({
     dsn: z.string().url().optional(),
