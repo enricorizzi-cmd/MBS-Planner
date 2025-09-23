@@ -20,7 +20,7 @@ interface ImportResult {
 }
 
 export function ImportPage() {
-  const { user, session } = useAuth();
+  const { session } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
