@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import webpush from 'web-push';
 import { supabase } from '../index';
-import { authenticate, AuthenticatedRequest } from '../middleware/auth';
+import { authenticate, type AuthenticatedRequest } from '../middleware/auth';
 import { CustomError } from '../middleware/errorHandler';
 import { config } from '../config';
 

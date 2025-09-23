@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { supabase } from '../index';
 import { CustomError } from './errorHandler';
 

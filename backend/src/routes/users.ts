@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { supabase } from '../index';
-import { authenticate, requireAdmin, requirePartnerAccess, AuthenticatedRequest } from '../middleware/auth';
+import { authenticate, requireAdmin, requirePartnerAccess, type AuthenticatedRequest } from '../middleware/auth';
 import { CustomError } from '../middleware/errorHandler';
 import { createUserSchema, updateUserSchema, userQuerySchema } from '../schemas/users';
 
@@ -236,6 +236,10 @@ router.put('/:id', authenticate, async (req: AuthenticatedRequest, res, next) =>
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthenticatedRequest, res, next) => {
   try {
     const { id } = req.params;
+
+    if (!id) {
+      throw new CustomError('ID utente mancante', 400);
+    }
 
     // Prevent admin from deleting themselves
     if (req.user!.id === id) {

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
 export interface AppError extends Error {
@@ -74,7 +74,7 @@ export const errorHandler = (
     message = 'Something went wrong';
   }
 
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     error: statusCode >= 500 ? 'Internal Server Error' : 'Client Error',
     message,
     ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),

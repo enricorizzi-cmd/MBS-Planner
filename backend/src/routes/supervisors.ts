@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { supabase } from '../index';
-import { authenticate, AuthenticatedRequest } from '../middleware/auth';
+import { authenticate, type AuthenticatedRequest } from '../middleware/auth';
 import { CustomError } from '../middleware/errorHandler';
 
 const router = Router();
@@ -108,15 +108,14 @@ router.get('/:id', authenticate, async (req: AuthenticatedRequest, res, next) =>
           name
         )
       `)
-      .eq('id', id)
-      .single();
+      .eq('id', id);
 
     // Apply partner filter for non-admin users
     if (req.user!.role !== 'admin') {
       query = query.eq('partner_id', req.user!.partner_id);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.single();
 
     if (error) {
       throw new CustomError('Supervisore non trovato', 404);
@@ -187,15 +186,14 @@ router.put('/:id', authenticate, async (req: AuthenticatedRequest, res, next) =>
           id,
           name
         )
-      `)
-      .single();
+      `);
 
     // Apply partner filter for non-admin users
     if (req.user!.role !== 'admin') {
       query = query.eq('partner_id', req.user!.partner_id);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.single();
 
     if (error) {
       throw new CustomError('Errore nell\'aggiornamento del supervisore', 500);
