@@ -94,7 +94,6 @@ export interface DispositionStats {
 }
 
 export function useDisposition(sessionId: string | null, dayIndex: 1 | 2) {
-  const { } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch sessions

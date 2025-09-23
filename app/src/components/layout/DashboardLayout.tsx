@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -152,6 +153,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const { user, isAdmin } = useAuth();
+  const location = useLocation();
+
+  const isActive = (href: string) => location.pathname === href;
 
   return (
     <>
@@ -186,25 +190,31 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                       <ul className="mt-1 space-y-1">
                         {item.children.map((child) => (
                           <li key={child.name}>
-                            <a
-                              href={child.href}
-                              className="group flex gap-x-3 rounded-xl p-2 text-sm leading-6 text-muted-foreground hover:text-foreground hover:bg-accent"
+                            <Link
+                              to={child.href}
+                              className={`group flex gap-x-3 rounded-xl p-2 text-sm leading-6 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${
+                                isActive(child.href) ? 'bg-accent text-foreground' : ''
+                              }`}
+                              onClick={onClose}
                             >
                               <child.icon className="h-5 w-5 shrink-0" />
                               {child.name}
-                            </a>
+                            </Link>
                           </li>
                         ))}
                       </ul>
                     </div>
                   ) : (
-                    <a
-                      href={item.href}
-                      className="group flex gap-x-3 rounded-xl p-2 text-sm leading-6 font-semibold text-muted-foreground hover:text-foreground hover:bg-accent"
+                    <Link
+                      to={item.href}
+                      className={`group flex gap-x-3 rounded-xl p-2 text-sm leading-6 font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${
+                        isActive(item.href) ? 'bg-accent text-foreground' : ''
+                      }`}
+                      onClick={onClose}
                     >
                       <item.icon className="h-6 w-6 shrink-0" />
                       {item.name}
-                    </a>
+                    </Link>
                   )}
                 </li>
               ))}

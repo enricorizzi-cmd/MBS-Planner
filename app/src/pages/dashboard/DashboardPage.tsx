@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Building2, Calendar, TrendingUp } from 'lucide-react';
 
@@ -137,14 +138,14 @@ export function DashboardPage() {
                   { name: 'Programma', href: '/programmazione/lista', icon: Calendar },
                   { name: 'Calendario', href: '/programmazione/calendario', icon: Calendar },
                 ].map((action) => (
-                  <a
+                  <Link
                     key={action.name}
-                    href={action.href}
+                    to={action.href}
                     className="flex flex-col items-center p-4 rounded-xl border border-dark-border hover:border-neon-primary/50 hover:bg-neon-primary/5 transition-all duration-200 group"
                   >
                     <action.icon className="h-6 w-6 text-muted-foreground group-hover:text-neon-primary mb-2" />
                     <span className="text-sm font-medium text-center">{action.name}</span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </CardContent>

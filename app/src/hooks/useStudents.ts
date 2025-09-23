@@ -35,11 +35,10 @@ export interface CompanyStudent {
 }
 
 export function useStudents() {
-  const { } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch students
-  const { data: students = [], isLoading: loading } = useQuery({
+  const { data: students = [], isLoading: loading, error: studentsError } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -50,6 +49,8 @@ export function useStudents() {
       if (error) throw error;
       return data as Student[];
     },
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch student companies relationships
@@ -217,6 +218,7 @@ export function useStudents() {
     students,
     studentCompanies,
     loading,
+    error: studentsError,
     createStudent: createStudentMutation.mutate,
     updateStudent: updateStudentMutation.mutate,
     deleteStudent: deleteStudentMutation.mutate,
