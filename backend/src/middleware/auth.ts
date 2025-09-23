@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import { supabase } from '../index';
-import { CustomError } from './errorHandler';
+import { supabase } from '../index.js';
+import { CustomError } from './errorHandler.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: {

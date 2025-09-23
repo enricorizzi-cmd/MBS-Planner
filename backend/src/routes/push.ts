@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import webpush from 'web-push';
-import { supabase } from '../index';
-import { authenticate, type AuthenticatedRequest } from '../middleware/auth';
-import { CustomError } from '../middleware/errorHandler';
-import { config } from '../config';
+import { supabase } from '../index.js';
+import { authenticate, type AuthenticatedRequest } from '../middleware/auth.js';
+import { CustomError } from '../middleware/errorHandler.js';
+import { config } from '../config.js';
 
 const router = Router();
 

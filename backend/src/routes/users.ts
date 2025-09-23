@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { supabase } from '../index';
-import { authenticate, requireAdmin, requirePartnerAccess, type AuthenticatedRequest } from '../middleware/auth';
-import { CustomError } from '../middleware/errorHandler';
-import { createUserSchema, updateUserSchema, userQuerySchema } from '../schemas/users';
+import { supabase } from '../index.js';
+import { authenticate, requireAdmin, requirePartnerAccess, type AuthenticatedRequest } from '../middleware/auth.js';
+import { CustomError } from '../middleware/errorHandler.js';
+import { createUserSchema, updateUserSchema, userQuerySchema } from '../schemas/users.js';
 
 const router = Router();
 

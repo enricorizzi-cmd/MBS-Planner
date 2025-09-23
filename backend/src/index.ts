@@ -6,16 +6,16 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
-import { config } from './config';
-import { authRoutes } from './routes/auth';
-import { usersRoutes } from './routes/users';
-import { studentsRoutes } from './routes/students';
-import { companiesRoutes } from './routes/companies';
-import { supervisorsRoutes } from './routes/supervisors';
-import { programsRoutes } from './routes/programs';
-import { pushRoutes } from './routes/push';
-import { errorHandler } from './middleware/errorHandler';
-import { requestLogger } from './middleware/requestLogger';
+import { config } from './config.js';
+import { authRoutes } from './routes/auth.js';
+import { usersRoutes } from './routes/users.js';
+import { studentsRoutes } from './routes/students.js';
+import { companiesRoutes } from './routes/companies.js';
+import { supervisorsRoutes } from './routes/supervisors.js';
+import { programsRoutes } from './routes/programs.js';
+import { pushRoutes } from './routes/push.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { requestLogger } from './middleware/requestLogger.js';
 
 const app = express();
 

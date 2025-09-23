@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { supabase } from '../index';
-import { authenticate, type AuthenticatedRequest } from '../middleware/auth';
-import { CustomError } from '../middleware/errorHandler';
-import { loginSchema, registerSchema, changePasswordSchema } from '../schemas/auth';
+import { supabase } from '../index.js';
+import { authenticate, type AuthenticatedRequest } from '../middleware/auth.js';
+import { CustomError } from '../middleware/errorHandler.js';
+import { loginSchema, registerSchema, changePasswordSchema } from '../schemas/auth.js';
 
 const router = Router();
 
