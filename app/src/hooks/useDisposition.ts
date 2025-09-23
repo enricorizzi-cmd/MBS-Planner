@@ -254,8 +254,8 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', sessionId, dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', _sessionId, _dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', _sessionId] });
     },
   });
 
@@ -288,8 +288,8 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', sessionId, dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', _sessionId, _dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', _sessionId] });
     },
   });
 
@@ -304,13 +304,13 @@ export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', sessionId, dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', _sessionId, _dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', _sessionId] });
     },
   });
 
   // Print disposition
-  const printDisposition = (sessionId: string, dayIndex: 1 | 2) => {
+  const printDisposition = (_sessionId: string, _dayIndex: 1 | 2) => {
     // This would typically open a print dialog or generate a PDF
     window.print();
   };

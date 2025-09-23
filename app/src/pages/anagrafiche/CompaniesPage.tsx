@@ -12,9 +12,7 @@ import {
   Mail,
   Phone,
   MapPin,
-  Calendar,
   Edit,
-  Trash2,
   UserPlus,
   Crown,
   Briefcase,
@@ -34,19 +32,11 @@ export function CompaniesPage() {
   
   const {
     companies,
-    companyStudents,
-    loading,
-    createCompany,
-    updateCompany,
-    deleteCompany,
-    addStudentToCompany,
-    removeStudentFromCompany,
-    updateStudentRole
+    companyStudents
   } = useCompanies();
 
   const {
-    lastMonthData,
-    loading: revenueLoading
+    lastMonthData
   } = useRevenues(selectedCompany || '');
 
   const filteredCompanies = companies.filter(company =>

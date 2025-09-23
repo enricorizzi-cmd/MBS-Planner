@@ -36,7 +36,7 @@ export interface LastMonthRevenueData {
 }
 
 export function useRevenues(companyId: string) {
-  const { user } = useAuth();
+  const { } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch revenues

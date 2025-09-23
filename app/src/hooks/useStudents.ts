@@ -35,7 +35,7 @@ export interface CompanyStudent {
 }
 
 export function useStudents() {
-  const { user } = useAuth();
+  const { } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch students

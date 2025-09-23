@@ -12,10 +12,8 @@ import {
   Phone,
   Building2,
   Edit,
-  Trash2,
   PlusCircle,
   Crown,
-  Briefcase,
   Euro,
 } from 'lucide-react';
 import { useStudents } from '@/hooks/useStudents';
@@ -34,7 +32,6 @@ export function StudentsPage() {
   } = useStudents();
 
   const {
-    lastMonthData
   } = useRevenues(selectedCompanyForRevenue?.id || '');
 
   const filteredStudents = students.filter(student =>
