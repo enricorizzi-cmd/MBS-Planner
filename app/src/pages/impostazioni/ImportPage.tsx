@@ -20,7 +20,7 @@ interface ImportResult {
 }
 
 export function ImportPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -51,7 +51,7 @@ export function ImportPage() {
       const response = await fetch('/api/import/excel', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user?.access_token}`,
+          'Authorization': `Bearer ${session?.access_token}`,
         },
         body: formData,
       });
@@ -85,7 +85,7 @@ export function ImportPage() {
     try {
       const response = await fetch('/api/import/template', {
         headers: {
-          'Authorization': `Bearer ${user?.access_token}`,
+          'Authorization': `Bearer ${session?.access_token}`,
         },
       });
 

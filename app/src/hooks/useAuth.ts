@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/lib/supabase';
 
@@ -11,17 +11,19 @@ export interface AuthUser extends User {
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       if (!isMounted) return;
       
-      if (session?.user) {
-        loadUserProfile(session.user);
+      setSession(initialSession);
+      if (initialSession?.user) {
+        loadUserProfile(initialSession.user);
       } else {
         setLoading(false);
       }
@@ -30,9 +32,10 @@ export function useAuth() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event: any, session: Session | null) => {
       if (!isMounted) return;
       
+      setSession(session);
       if (session?.user) {
         await loadUserProfile(session.user);
       } else {
@@ -114,6 +117,7 @@ export function useAuth() {
 
   return {
     user,
+    session,
     loading,
     signIn,
     signUp,
