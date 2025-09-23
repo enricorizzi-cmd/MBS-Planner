@@ -16,15 +16,15 @@ services:
       - key: SUPABASE_URL
         value: https://cxegnwuwfpgfzbactgtc.supabase.co
       - key: SUPABASE_ANON_KEY
-        sync: false
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4ZWdud3V3ZnBnZnpiYWN0Z3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MTc4NjQsImV4cCI6MjA3NDE5Mzg2NH0.81I-McS_19h6HSPOZZNeRiRVF8n3PFrOWUg-vure0_I
       - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4ZWdud3V3ZnBnZnpiYWN0Z3RjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODYxNzg2NCwiZXhwIjoyMDc0MTkzODY0fQ.LsSp6_k3-XAAetTT0Ht8gqgNvYBsukxQV3lXODF6Mcw
       - key: CORS_ORIGIN
         value: https://mbs-planner-unified.onrender.com
       - key: VAPID_PUBLIC_KEY
-        sync: false
+        value: BBYsmvlr09kO11NVYOxJN6Gqt_0RAj-1dxAyIaffORbfLekn-CaMuLJLhw89L3BOKjxETHJmhD7I7y2QIL6rCY0
       - key: VAPID_PRIVATE_KEY
-        sync: false
+        value: qesZvdOf18Qy5FHJt7-PRFHZQ1QDL5BETApuh_AP0As
       - key: VAPID_SUBJECT
         value: mailto:admin@mbsplanner.com
       - key: SENTRY_DSN
@@ -45,10 +45,7 @@ services:
           name: mbs-planner-backend
           envVarKey: SUPABASE_URL
       - key: VITE_SUPABASE_ANON_KEY
-        fromService:
-          type: web
-          name: mbs-planner-backend
-          envVarKey: SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4ZWdud3V3ZnBnZnpiYWN0Z3RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MTc4NjQsImV4cCI6MjA3NDE5Mzg2NH0.81I-McS_19h6HSPOZZNeRiRVF8n3PFrOWUg-vure0_I
 
 databases:
   - name: supabase
