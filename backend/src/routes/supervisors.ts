@@ -175,23 +175,24 @@ router.put('/:id', authenticate, async (req: AuthenticatedRequest, res, next) =>
         ...updateData,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', id)
-      .select(`
-        *,
-        partners:partner_id (
-          id,
-          name
-        ),
-        companies:company_id (
-          id,
-          name
-        )
-      `);
+      .eq('id', id);
 
     // Apply partner filter for non-admin users
     if (req.user!.role !== 'admin') {
       query = query.eq('partner_id', req.user!.partner_id);
     }
+
+    query = query.select(`
+      *,
+      partners:partner_id (
+        id,
+        name
+      ),
+      companies:company_id (
+        id,
+        name
+      )
+    `);
 
     const { data, error } = await query.single();
 

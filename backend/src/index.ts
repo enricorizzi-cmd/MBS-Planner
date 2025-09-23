@@ -96,13 +96,13 @@ app.get('/readyz', async (req, res) => {
       });
     }
     
-    res.status(200).json({ 
+    return res.status(200).json({ 
       status: 'ok', 
       database: 'connected',
       timestamp: new Date().toISOString() 
     });
   } catch (error) {
-    res.status(503).json({ 
+    return res.status(503).json({ 
       status: 'error', 
       message: 'Service unavailable',
       timestamp: new Date().toISOString() 
@@ -134,7 +134,7 @@ app.get('*', (req, res) => {
   }
   
   // Serve index.html for all other routes (SPA routing)
-  res.sendFile(path.join(frontendPath, 'index.html'));
+  return res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Error handling middleware
