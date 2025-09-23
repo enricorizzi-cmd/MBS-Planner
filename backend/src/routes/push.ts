@@ -16,12 +16,12 @@ const subscriptionSchema = z.object({
   }),
 });
 
-// Configure web-push
-webpush.setVapidDetails(
-  config.vapid.subject,
-  config.vapid.publicKey,
-  config.vapid.privateKey
-);
+// Configure web-push - Temporarily commented out due to VAPID key issues
+// webpush.setVapidDetails(
+//   config.vapid.subject,
+//   config.vapid.publicKey,
+//   config.vapid.privateKey
+// );
 
 // Subscribe to push notifications
 router.post('/subscribe', authenticate, async (req: AuthenticatedRequest, res, next) => {
@@ -106,16 +106,17 @@ router.post('/test', authenticate, async (req: AuthenticatedRequest, res, next) 
 
     const promises = subscriptions.map(async (subscription) => {
       try {
-        await webpush.sendNotification(
-          {
-            endpoint: subscription.endpoint,
-            keys: {
-              p256dh: subscription.p256dh_key,
-              auth: subscription.auth_key,
-            },
-          },
-          payload
-        );
+        // Temporarily commented out due to VAPID key issues
+        // await webpush.sendNotification(
+        //   {
+        //     endpoint: subscription.endpoint,
+        //     keys: {
+        //       p256dh: subscription.p256dh_key,
+        //       auth: subscription.auth_key,
+        //     },
+        //   },
+        //   payload
+        // );
       } catch (error) {
         console.error('Error sending notification:', error);
         // Remove invalid subscription
