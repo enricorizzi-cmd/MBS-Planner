@@ -36,7 +36,7 @@ COPY . .
 RUN cd app && npm run build
 
 # Build backend
-RUN cd backend && npm run build
+RUN cd backend && NODE_ENV=production npm run build
 
 # Production stage
 FROM base AS runner
