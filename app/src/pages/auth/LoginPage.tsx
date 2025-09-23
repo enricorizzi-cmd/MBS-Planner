@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuth } from '@/hooks/useAuth';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { RegistrationForm } from '@/components/auth/RegistrationForm';
+import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Email non valida'),
@@ -22,6 +23,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRegistration, setShowRegistration] = useState(false);
   const { signIn } = useAuth();
 
   const {
@@ -44,6 +46,10 @@ export function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (showRegistration) {
+    return <RegistrationForm onBackToLogin={() => setShowRegistration(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-gaming flex items-center justify-center p-4">
@@ -124,18 +130,30 @@ export function LoginPage() {
                 </motion.div>
               )}
 
-              <Button
-                type="submit"
-                className="w-full btn-neon"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <LoadingSpinner size="sm" className="mr-2" />
-                ) : (
-                  <LogIn className="mr-2 h-4 w-4" />
-                )}
-                {isLoading ? 'Accesso in corso...' : 'Accedi'}
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  type="submit"
+                  className="w-full btn-neon"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <LoadingSpinner size="sm" className="mr-2" />
+                  ) : (
+                    <LogIn className="mr-2 h-4 w-4" />
+                  )}
+                  {isLoading ? 'Accesso in corso...' : 'Accedi'}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowRegistration(true)}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Registrati
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

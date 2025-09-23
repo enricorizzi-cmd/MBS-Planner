@@ -115,6 +115,86 @@ router.post('/change-password', authenticate, async (req: AuthenticatedRequest, 
   }
 });
 
+// Get partners for registration
+router.get('/partners', async (req, res, next) => {
+  try {
+    const { data: partners, error } = await supabase
+      .from('partners')
+      .select('id, name')
+      .order('name');
+
+    if (error) {
+      throw new CustomError('Errore nel recupero dei partner', 500);
+    }
+
+    res.json(partners);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Register new user
+router.post('/register', async (req, res, next) => {
+  try {
+    const { email, password, name, role, partner_id } = registerSchema.parse(req.body);
+
+    // Check if this is the first user in the system
+    const { data: existingUsers, error: countError } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1);
+
+    if (countError) {
+      throw new CustomError('Errore nel controllo utenti esistenti', 500);
+    }
+
+    const isFirstUser = existingUsers.length === 0;
+    const finalRole = isFirstUser ? 'admin' : role;
+
+    // Create user in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authError) {
+      throw new CustomError('Errore durante la registrazione: ' + authError.message, 400);
+    }
+
+    if (!authData.user) {
+      throw new CustomError('Errore durante la creazione dell\'utente', 500);
+    }
+
+    // Create user profile in database
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .insert({
+        id: authData.user.id,
+        email,
+        name,
+        role: finalRole,
+        partner_id,
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      // If profile creation fails, we should clean up the auth user
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      throw new CustomError('Errore durante la creazione del profilo utente', 500);
+    }
+
+    res.status(201).json({
+      user: authData.user,
+      session: authData.session,
+      profile,
+      isFirstUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Refresh token
 router.post('/refresh', async (req, res, next) => {
   try {
