@@ -1,34 +1,26 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Lock, 
-  Unlock, 
   User, 
-  MapPin, 
-  AlertTriangle,
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { Seat, Booking, Layout } from '@/hooks/useDisposition';
+import { Seat, Layout } from '@/hooks/useDisposition';
 import { cn } from '@/lib/utils';
 
 interface DispositionGridProps {
   seats: Seat[];
-  bookings: Booking[];
   layout: Layout | null;
   onSeatUpdate: (params: { seatId: string; updates: Partial<Seat> }) => void;
-  loading: boolean;
 }
 
 export function DispositionGrid({ 
   seats, 
-  bookings, 
   layout, 
-  onSeatUpdate, 
-  loading 
+  onSeatUpdate
 }: DispositionGridProps) {
   const [draggedSeat, setDraggedSeat] = useState<Seat | null>(null);
   const [hoveredSeat, setHoveredSeat] = useState<string | null>(null);

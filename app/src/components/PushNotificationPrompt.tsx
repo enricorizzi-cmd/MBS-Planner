@@ -20,9 +20,6 @@ export function PushNotificationPrompt() {
     await subscribe();
   };
 
-  const handleUnsubscribe = async () => {
-    await unsubscribe();
-  };
 
   const handleDismiss = () => {
     setIsVisible(false);

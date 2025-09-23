@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

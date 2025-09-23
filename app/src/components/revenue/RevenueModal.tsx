@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,14 +9,12 @@ import {
   Plus, 
   TrendingUp, 
   TrendingDown,
-  AlertTriangle,
   Calendar,
   Euro,
   BarChart3
 } from 'lucide-react';
 import { useRevenues } from '@/hooks/useRevenues';
 import { RevenueChart } from './RevenueChart';
-import { cn } from '@/lib/utils';
 
 interface RevenueModalProps {
   isOpen: boolean;
@@ -26,7 +24,7 @@ interface RevenueModalProps {
 }
 
 export function RevenueModal({ isOpen, onClose, companyId, companyName }: RevenueModalProps) {
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear] = useState<number>(new Date().getFullYear());
   const [newMonth, setNewMonth] = useState<number>(new Date().getMonth() + 1);
   const [newYear, setNewYear] = useState<number>(new Date().getFullYear());
   const [newAmount, setNewAmount] = useState<string>('');
@@ -36,14 +34,10 @@ export function RevenueModal({ isOpen, onClose, companyId, companyName }: Revenu
     revenues,
     monthlyData,
     annualData,
-    lastMonthData,
-    loading,
     createRevenue,
-    updateRevenue,
     deleteRevenue
   } = useRevenues(companyId);
 
-  const availableYears = Array.from(new Set(revenues.map(r => r.year))).sort((a, b) => b - a);
   const currentYear = new Date().getFullYear();
 
   const handleAddRevenue = async () => {

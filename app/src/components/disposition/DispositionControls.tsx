@@ -8,10 +8,8 @@ import {
   Settings, 
   Users, 
   MapPin, 
-  Lock, 
-  Unlock,
   RotateCcw,
-  Save
+  CheckCircle
 } from 'lucide-react';
 import { Layout } from '@/hooks/useDisposition';
 
