@@ -1,0 +1,23 @@
+# Configurazione per Render.com
+# Questo file contiene le variabili d'ambiente necessarie per il deployment su Render
+
+# Database Supabase
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# Backend Configuration
+NODE_ENV=production
+PORT=3001
+
+# Frontend Configuration
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Istruzioni per Render:
+# 1. Vai su https://dashboard.render.com
+# 2. Seleziona il tuo servizio
+# 3. Vai su Environment
+# 4. Aggiungi le variabili d'ambiente sopra
+# 5. Per SUPABASE_SERVICE_ROLE_KEY, usa la chiave con privilegi amministrativi
+# 6. Per VITE_SUPABASE_ANON_KEY, usa la chiave pubblica anonima

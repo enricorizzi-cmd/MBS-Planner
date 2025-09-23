@@ -1,0 +1,16 @@
+# Configurazione per l'importazione dei dati Excel nel database Supabase
+# Copia questo file come .env e inserisci i tuoi valori reali
+
+# URL del progetto Supabase
+SUPABASE_URL=https://your-project-id.supabase.co
+
+# Service Role Key di Supabase (chiave con privilegi amministrativi)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# Istruzioni per ottenere le credenziali:
+# 1. Vai su https://supabase.com/dashboard
+# 2. Seleziona il tuo progetto
+# 3. Vai su Settings > API
+# 4. Copia l'URL del progetto per SUPABASE_URL
+# 5. Copia la Service Role Key per SUPABASE_SERVICE_ROLE_KEY
+#    (ATTENZIONE: questa chiave ha privilegi amministrativi, non condividerla mai!)
