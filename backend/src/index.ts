@@ -14,6 +14,7 @@ import { companiesRoutes } from './routes/companies.js';
 import { supervisorsRoutes } from './routes/supervisors.js';
 import { programsRoutes } from './routes/programs.js';
 import { pushRoutes } from './routes/push.js';
+import { importRoutes } from './routes/import.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 
@@ -118,6 +119,7 @@ app.use('/api/companies', companiesRoutes);
 app.use('/api/supervisors', supervisorsRoutes);
 app.use('/api/programs', programsRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/import', importRoutes);
 
 // Serve static files from the frontend build
 const frontendPath = path.join(__dirname, '../../app/dist');

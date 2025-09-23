@@ -12,7 +12,8 @@ import {
   Menu, 
   X,
   LogOut,
-  User
+  User,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -51,6 +52,7 @@ const navigation = [
     children: [
       { name: 'Utenti', href: '/impostazioni/utenti', icon: Users },
       { name: 'Settings', href: '/impostazioni/settings', icon: Settings },
+      { name: 'Import Dati', href: '/impostazioni/import', icon: Upload },
     ],
   },
 ];

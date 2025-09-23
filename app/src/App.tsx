@@ -14,6 +14,7 @@ import { DispositionPage } from './pages/programmazione/DispositionPage';
 import { CalendarPage } from './pages/programmazione/CalendarPage';
 import { UsersPage } from './pages/impostazioni/UsersPage';
 import { SettingsPage } from './pages/impostazioni/SettingsPage';
+import { ImportPage } from './pages/impostazioni/ImportPage';
 
 function App() {
   const { user, loading } = useAuth();
@@ -50,6 +51,7 @@ function App() {
           {/* Impostazioni */}
           <Route path="/impostazioni/utenti" element={<UsersPage />} />
           <Route path="/impostazioni/settings" element={<SettingsPage />} />
+          <Route path="/impostazioni/import" element={<ImportPage />} />
           
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
