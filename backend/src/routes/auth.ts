@@ -194,61 +194,40 @@ router.get('/config-check', async (req, res, next) => {
   }
 });
 
-// Create database structure
-router.post('/create-db', async (req, res, next) => {
+// Force create partners table (simplified)
+router.post('/force-create-partners', async (req, res, next) => {
   try {
-    console.log('🚀 Creating database structure...');
+    console.log('🚀 Force creating partners table...');
     
-    // Try to create partners table using raw SQL
-    const createTableSQL = `
-      CREATE TABLE IF NOT EXISTS partners (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        name VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-      );
-    `;
-    
-    // Execute raw SQL
-    const { data: createResult, error: createError } = await adminSupabase
-      .rpc('exec_sql', { sql: createTableSQL });
-    
-    if (createError) {
-      console.error('❌ Error creating partners table:', createError);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to create partners table',
-        details: createError
-      });
-    }
-    
-    console.log('✅ Partners table created successfully');
-    
-    // Insert demo partner
+    // Direct approach: just try to insert a partner
+    // This will fail if the table doesn't exist, giving us more info
     const { data: inserted, error: insertError } = await adminSupabase
       .from('partners')
       .insert([{ name: 'Partner Demo' }])
       .select('id, name');
     
     if (insertError) {
-      console.error('❌ Error inserting demo partner:', insertError);
+      console.error('❌ Cannot insert partner (table may not exist):', insertError);
+      console.error('❌ Full error details:', JSON.stringify(insertError, null, 2));
+      
       return res.status(500).json({
         success: false,
-        error: 'Failed to insert demo partner',
-        details: insertError
+        error: 'Partners table does not exist or cannot insert',
+        details: insertError,
+        suggestion: 'Need to run database migrations manually'
       });
     }
     
-    console.log('✅ Demo partner inserted successfully');
+    console.log('✅ Partner inserted successfully');
     
     return res.json({
       success: true,
-      message: 'Database structure created successfully',
+      message: 'Partners table exists and works',
       partners: inserted
     });
     
   } catch (error) {
-    console.error('❌ Database creation failed:', error);
+    console.error('❌ Unexpected error:', error);
     return next(error);
   }
 });
