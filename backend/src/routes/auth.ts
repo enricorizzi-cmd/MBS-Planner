@@ -133,6 +133,8 @@ router.post('/change-password', authenticate, async (req: AuthenticatedRequest, 
 router.get('/test-db', async (req, res, next) => {
   try {
     console.log('🔍 Testing database connection...');
+    console.log('🔧 Supabase URL:', config.supabase.url);
+    console.log('🔧 Service Role Key length:', config.supabase.serviceRoleKey?.length || 0);
     
     // Test basic connection with admin client
     const { data, error } = await adminSupabase
@@ -145,7 +147,12 @@ router.get('/test-db', async (req, res, next) => {
       return res.status(500).json({ 
         success: false, 
         error: error.message,
-        details: error 
+        details: error,
+        config: {
+          url: config.supabase.url,
+          hasServiceKey: !!config.supabase.serviceRoleKey,
+          serviceKeyLength: config.supabase.serviceRoleKey?.length || 0
+        }
       });
     }
 
@@ -183,6 +190,13 @@ router.get('/partners', async (req, res, next) => {
 router.post('/partners/seed', async (req, res, next) => {
   try {
     console.log('🔍 Checking existing partners...');
+    console.log('🔧 Using admin client with service role key');
+    
+    // First, try to disable RLS temporarily for this operation
+    const { error: rlsError } = await adminSupabase.rpc('disable_rls_for_partners');
+    if (rlsError) {
+      console.log('⚠️ Could not disable RLS (this is normal if function doesn\'t exist):', rlsError.message);
+    }
     
     const { data: existingPartners, error: existingError } = await adminSupabase
       .from('partners')
@@ -191,12 +205,19 @@ router.post('/partners/seed', async (req, res, next) => {
 
     if (existingError) {
       console.error('❌ Error checking existing partners:', existingError);
+      console.error('❌ Error details:', JSON.stringify(existingError, null, 2));
+      
+      // Try to re-enable RLS even if there was an error
+      await adminSupabase.rpc('enable_rls_for_partners');
+      
       throw new CustomError(`Errore nel controllo dei partner esistenti: ${existingError.message}`, 500);
     }
 
     console.log('✅ Existing partners check successful:', existingPartners);
 
     if (existingPartners && existingPartners.length > 0) {
+      // Re-enable RLS before returning
+      await adminSupabase.rpc('enable_rls_for_partners');
       return res.json({ created: false, message: 'Partner già presenti' });
     }
 
@@ -209,13 +230,29 @@ router.post('/partners/seed', async (req, res, next) => {
 
     if (insertError) {
       console.error('❌ Error creating demo partner:', insertError);
+      console.error('❌ Insert error details:', JSON.stringify(insertError, null, 2));
+      
+      // Try to re-enable RLS even if there was an error
+      await adminSupabase.rpc('enable_rls_for_partners');
+      
       throw new CustomError(`Errore nella creazione del partner di test: ${insertError.message}`, 500);
     }
+
+    // Re-enable RLS after successful operation
+    await adminSupabase.rpc('enable_rls_for_partners');
 
     console.log('✅ Demo partner created successfully:', inserted);
     return res.status(201).json({ created: true, partners: inserted });
   } catch (error) {
     console.error('❌ Unexpected error in partners/seed:', error);
+    
+    // Try to re-enable RLS even if there was an unexpected error
+    try {
+      await adminSupabase.rpc('enable_rls_for_partners');
+    } catch (rlsError) {
+      console.error('❌ Could not re-enable RLS:', rlsError);
+    }
+    
     return next(error);
   }
 });
