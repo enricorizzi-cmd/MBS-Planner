@@ -94,8 +94,8 @@ export interface DispositionStats {
   manualStats: Record<string, number>;
 }
 
-export function useDisposition(sessionId: string | null, dayIndex: 1 | 2) {
-  const { user } = useAuth();
+export function useDisposition(_sessionId: string | null, _dayIndex: 1 | 2) {
+  const { } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch sessions
