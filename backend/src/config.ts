@@ -90,7 +90,7 @@ try {
         console.error(`  - ${err.path.join('.')}: ${err.message}`);
       });
     } else {
-      console.error(`  - ${error.message}`);
+      console.error(`  - ${error instanceof Error ? error.message : String(error)}`);
     }
     console.error('\n💡 Please check your environment variables and ensure they are correctly set.');
     console.error('   Required environment variables:');
