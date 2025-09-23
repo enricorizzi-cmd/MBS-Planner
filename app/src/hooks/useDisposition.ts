@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -94,7 +94,7 @@ export interface DispositionStats {
   manualStats: Record<string, number>;
 }
 
-export function useDisposition(__sessionId: string | null, __dayIndex: 1 | 2) {
+export function useDisposition(sessionId: string | null, dayIndex: 1 | 2) {
   const { } = useAuth();
   const queryClient = useQueryClient();
 
@@ -118,9 +118,9 @@ export function useDisposition(__sessionId: string | null, __dayIndex: 1 | 2) {
 
   // Fetch current session details
   const { data: currentSession } = useQuery({
-    queryKey: ['session', _sessionId],
+    queryKey: ['session', sessionId],
     queryFn: async () => {
-      if (!_sessionId) return null;
+      if (!sessionId) return null;
       
       const { data, error } = await supabase
         .from('sessions')
@@ -128,38 +128,38 @@ export function useDisposition(__sessionId: string | null, __dayIndex: 1 | 2) {
           *,
           days:session_days(*)
         `)
-        .eq('id', _sessionId)
+        .eq('id', sessionId)
         .single();
 
       if (error) throw error;
       return data as Session;
     },
-    enabled: !!_sessionId,
+    enabled: !!sessionId,
   });
 
   // Fetch layout
   const { data: currentLayout } = useQuery({
-    queryKey: ['layout', _sessionId],
+    queryKey: ['layout', sessionId],
     queryFn: async () => {
-      if (!_sessionId) return null;
+      if (!sessionId) return null;
       
       const { data, error } = await supabase
         .from('layouts')
         .select('*')
-        .eq('session_id', _sessionId)
+        .eq('session_id', sessionId)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
       return data as Layout | null;
     },
-    enabled: !!_sessionId,
+    enabled: !!sessionId,
   });
 
   // Fetch seats for current day
   const { data: seats = [], isLoading: loading } = useQuery({
-    queryKey: ['seats', _sessionId, _dayIndex],
+    queryKey: ['seats', sessionId, dayIndex],
     queryFn: async () => {
-      if (!_sessionId) return [];
+      if (!sessionId) return [];
       
       const { data, error } = await supabase
         .from('seats')
@@ -172,21 +172,21 @@ export function useDisposition(__sessionId: string | null, __dayIndex: 1 | 2) {
           ),
           reservation_student:students(*)
         `)
-        .eq('session_day_id', currentSession?.days?.find(d => d.day_index === _dayIndex)?.id)
+        .eq('session_day_id', currentSession?.days?.find(d => d.day_index === dayIndex)?.id)
         .order('row_letter')
         .order('column_number');
 
       if (error) throw error;
       return data as Seat[];
     },
-    enabled: !!_sessionId && !!currentSession?.days,
+    enabled: !!sessionId && !!currentSession?.days,
   });
 
   // Fetch bookings for current day
   const { data: bookings = [] } = useQuery({
-    queryKey: ['bookings', _sessionId, _dayIndex],
+    queryKey: ['bookings', sessionId, dayIndex],
     queryFn: async () => {
-      if (!_sessionId) return [];
+      if (!sessionId) return [];
       
       const { data, error } = await supabase
         .from('bookings')
@@ -195,13 +195,13 @@ export function useDisposition(__sessionId: string | null, __dayIndex: 1 | 2) {
           student:students(*),
           manual:manuals(*)
         `)
-        .eq('session_day_id', currentSession?.days?.find(d => d.day_index === _dayIndex)?.id)
+        .eq('session_day_id', currentSession?.days?.find(d => d.day_index === dayIndex)?.id)
         .eq('status', 'confirmed');
 
       if (error) throw error;
       return data as Booking[];
     },
-    enabled: !!_sessionId && !!currentSession?.days,
+    enabled: !!sessionId && !!currentSession?.days,
   });
 
   // Calculate stats
@@ -245,17 +245,17 @@ export function useDisposition(__sessionId: string | null, __dayIndex: 1 | 2) {
 
   // Generate disposition mutation
   const generateDispositionMutation = useMutation({
-    mutationFn: async (_sessionId: string) => {
+    mutationFn: async (sessionId: string) => {
       const { data, error } = await supabase.functions.invoke('generate-disposition', {
-        body: { session_id: _sessionId }
+        body: { session_id: sessionId }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', __sessionId, __dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', __sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', sessionId, dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', sessionId] });
     },
   });
 
@@ -273,44 +273,44 @@ export function useDisposition(__sessionId: string | null, __dayIndex: 1 | 2) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', _sessionId, _dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['seats', sessionId, dayIndex] });
     },
   });
 
   // Add row mutation
   const addRowMutation = useMutation({
-    mutationFn: async (_sessionId: string) => {
+    mutationFn: async (sessionId: string) => {
       const { data, error } = await supabase.functions.invoke('add-row', {
-        body: { session_id: _sessionId }
+        body: { session_id: sessionId }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', __sessionId, __dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', __sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', sessionId, dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', sessionId] });
     },
   });
 
   // Change layout mutation
   const changeLayoutMutation = useMutation({
-    mutationFn: async ({ _sessionId, seatsPerBlock }: { _sessionId: string; seatsPerBlock: number }) => {
+    mutationFn: async ({ sessionId, seatsPerBlock }: { sessionId: string; seatsPerBlock: number }) => {
       const { data, error } = await supabase.functions.invoke('change-layout', {
-        body: { session_id: _sessionId, seats_per_block: seatsPerBlock }
+        body: { session_id: sessionId, seats_per_block: seatsPerBlock }
       });
 
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seats', __sessionId, __dayIndex] });
-      queryClient.invalidateQueries({ queryKey: ['layout', __sessionId] });
+      queryClient.invalidateQueries({ queryKey: ['seats', sessionId, dayIndex] });
+      queryClient.invalidateQueries({ queryKey: ['layout', sessionId] });
     },
   });
 
   // Print disposition
-  const printDisposition = (__sessionId: string, __dayIndex: 1 | 2) => {
+  const printDisposition = (_sessionId: string, _dayIndex: 1 | 2) => {
     // This would typically open a print dialog or generate a PDF
     window.print();
   };

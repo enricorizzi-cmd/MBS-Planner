@@ -39,7 +39,7 @@ export interface CompanyStudent {
 }
 
 export function useCompanies() {
-  const { user } = useAuth();
+  const { } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch companies

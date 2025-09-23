@@ -40,7 +40,7 @@ export function DispositionPage() {
     
     setIsGenerating(true);
     try {
-      await generateDisposition(selectedSession);
+      await generateDisposition({ sessionId: selectedSession, seatsPerBlock: 0 });
     } catch (error) {
       console.error('Error generating disposition:', error);
     } finally {

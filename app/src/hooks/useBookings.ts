@@ -62,7 +62,7 @@ export interface Booking {
 }
 
 export function useBookings(sessionId: string | null) {
-  const { user } = useAuth();
+  const { } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch sessions
