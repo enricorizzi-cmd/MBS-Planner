@@ -43,6 +43,7 @@ export function RegistrationForm({ onBackToLogin }: RegistrationFormProps) {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loadingPartners, setLoadingPartners] = useState(true);
   const { signUp } = useAuth();
+  const [seeding, setSeeding] = useState(false);
 
   const {
     register,
@@ -70,6 +71,26 @@ export function RegistrationForm({ onBackToLogin }: RegistrationFormProps) {
 
     fetchPartners();
   }, []);
+
+  const seedPartner = async () => {
+    try {
+      setSeeding(true);
+      setError(null);
+      const res = await fetch('/api/auth/partners/seed', { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || 'Errore nella creazione del partner di test');
+      }
+      // Refresh partner list
+      const partnersRes = await fetch('/api/auth/partners');
+      const partnersData = await partnersRes.json();
+      setPartners(partnersData);
+    } catch (e: any) {
+      setError(e.message || 'Errore nella creazione del partner di test');
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
@@ -251,6 +272,13 @@ export function RegistrationForm({ onBackToLogin }: RegistrationFormProps) {
                 </Select>
                 {errors.partner_id && (
                   <p className="text-sm text-neon-danger">{errors.partner_id.message}</p>
+                )}
+                {partners.length === 0 && (
+                  <div className="mt-2">
+                    <Button type="button" size="sm" variant="secondary" onClick={seedPartner} disabled={seeding}>
+                      {seeding ? 'Creazione partner...' : 'Crea partner di test'}
+                    </Button>
+                  </div>
                 )}
               </div>
 
