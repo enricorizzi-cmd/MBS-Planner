@@ -10,10 +10,10 @@ COPY package*.json ./
 COPY app/package*.json ./app/
 COPY backend/package*.json ./backend/
 
-# Install dependencies
-RUN npm install --only=production && \
-    cd app && npm install --only=production && \
-    cd ../backend && npm install --only=production
+# Install all dependencies (including dev for build)
+RUN npm install && \
+    cd app && npm install && \
+    cd ../backend && npm install
 
 # Build stage
 FROM base AS builder
@@ -25,7 +25,9 @@ COPY app/package*.json ./app/
 COPY backend/package*.json ./backend/
 
 # Install all dependencies (including dev)
-RUN npm run install:all
+RUN npm install && \
+    cd app && npm install && \
+    cd ../backend && npm install
 
 # Copy source code
 COPY . .

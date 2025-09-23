@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const configSchema = z.object({
-  port: z.coerce.number().default(3001),
+  port: z.coerce.number().default(3000),
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   supabase: z.object({
     url: z.string().url(),
