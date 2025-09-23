@@ -3,6 +3,8 @@ import cors from 'cors';
 import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import { config } from './config';
 import { authRoutes } from './routes/auth';
@@ -16,6 +18,10 @@ import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 
 const app = express();
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize Supabase client
 export const supabase = createClient(
@@ -113,12 +119,22 @@ app.use('/api/supervisors', supervisorsRoutes);
 app.use('/api/programs', programsRoutes);
 app.use('/api/push', pushRoutes);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Not Found', 
-    message: `Route ${req.originalUrl} not found` 
-  });
+// Serve static files from the frontend build
+const frontendPath = path.join(__dirname, '../../app/dist');
+app.use(express.static(frontendPath));
+
+// Serve the React app for all non-API routes
+app.get('*', (req, res) => {
+  // Don't serve index.html for API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ 
+      error: 'Not Found', 
+      message: `API route ${req.originalUrl} not found` 
+    });
+  }
+  
+  // Serve index.html for all other routes (SPA routing)
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Error handling middleware

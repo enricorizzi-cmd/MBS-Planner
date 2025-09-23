@@ -18,7 +18,9 @@
     "lint:frontend": "cd app && npm run lint",
     "lint:backend": "cd backend && npm run lint",
     "format": "prettier --write .",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "install:all": "npm install && cd app && npm install && cd ../backend && npm install",
+    "postinstall": "npm run install:all"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -30,7 +32,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/mbs-planner.git"
+    "url": "https://github.com/enricorizzi-cmd/MBS-Planner.git"
   },
   "keywords": ["pwa", "react", "supabase", "typescript", "education"],
   "author": "Enrico Rizzi",

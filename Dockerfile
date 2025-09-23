@@ -1,4 +1,4 @@
-# Multi-stage build for production
+# Multi-stage build for unified service
 FROM node:20-alpine AS base
 
 # Install dependencies only when needed
@@ -11,7 +11,9 @@ COPY app/package*.json ./app/
 COPY backend/package*.json ./backend/
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production && \
+    cd app && npm ci --only=production && \
+    cd ../backend && npm ci --only=production
 
 # Build stage
 FROM base AS builder
@@ -22,19 +24,19 @@ COPY package*.json ./
 COPY app/package*.json ./app/
 COPY backend/package*.json ./backend/
 
-# Install all dependencies (including dev dependencies)
-RUN npm ci
+# Install all dependencies (including dev)
+RUN npm ci && \
+    cd app && npm ci && \
+    cd ../backend && npm ci
 
 # Copy source code
 COPY . .
 
 # Build frontend
-WORKDIR /app/app
-RUN npm run build
+RUN cd app && npm run build
 
 # Build backend
-WORKDIR /app/backend
-RUN npm run build
+RUN cd backend && npm run build
 
 # Production stage
 FROM base AS runner
@@ -44,23 +46,22 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built applications
-COPY --from=builder /app/app/dist ./app/dist
+# Copy built application
 COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/backend/package*.json ./backend/
+COPY --from=builder /app/app/dist ./app/dist
 COPY --from=builder /app/backend/node_modules ./backend/node_modules
-COPY --from=builder /app/backend/package.json ./backend/package.json
 
 # Set ownership
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3001/healthz || exit 1
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=3000
 
 # Start the application
 CMD ["node", "backend/dist/index.js"]
-
