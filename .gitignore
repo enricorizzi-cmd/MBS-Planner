@@ -120,4 +120,5 @@ workbox-*.js.map
 # Render environment variables (DO NOT COMMIT)
 render-env-vars.txt
 .env.render.local
+MBS DATI IMPORT.xlsx
 
