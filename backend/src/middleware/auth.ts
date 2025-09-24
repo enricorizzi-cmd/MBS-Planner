@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import type { MulterFile } from '../types/multer.js';
 import { supabase } from '../index.js';
 import { CustomError } from './errorHandler.js';
 
@@ -9,6 +10,7 @@ export interface AuthenticatedRequest extends Request {
     role: string;
     partner_id: string;
   };
+  file?: MulterFile;
 }
 
 export const authenticate = async (

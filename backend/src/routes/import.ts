@@ -48,6 +48,13 @@ interface ImportResult {
   errors: string[];
 }
 
+interface ImportFunctionResult {
+  created: number;
+  updated: number;
+  errors: number;
+  errorMessages: string[];
+}
+
 // Helper function to clean and validate data
 function cleanData(data: any): any {
   if (typeof data === 'string') {
@@ -69,7 +76,7 @@ function isValidPhone(phone: string): boolean {
 }
 
 // Import partners from Excel
-async function importPartners(rows: ExcelRow[], partnerId?: string): Promise<{ created: number; updated: number; errors: number; errors: string[] }> {
+async function importPartners(rows: ExcelRow[], partnerId?: string): Promise<ImportFunctionResult> {
   let created = 0;
   let updated = 0;
   let errors = 0;
@@ -115,11 +122,11 @@ async function importPartners(rows: ExcelRow[], partnerId?: string): Promise<{ c
     }
   }
 
-  return { created, updated, errors, errors: errorMessages };
+  return { created, updated, errors, errorMessages };
 }
 
 // Import companies from Excel
-async function importCompanies(rows: ExcelRow[], partnerId?: string): Promise<{ created: number; updated: number; errors: number; errors: string[] }> {
+async function importCompanies(rows: ExcelRow[], partnerId?: string): Promise<ImportFunctionResult> {
   let created = 0;
   let updated = 0;
   let errors = 0;
@@ -226,11 +233,11 @@ async function importCompanies(rows: ExcelRow[], partnerId?: string): Promise<{ 
     }
   }
 
-  return { created, updated, errors, errors: errorMessages };
+  return { created, updated, errors, errorMessages };
 }
 
 // Import students from Excel
-async function importStudents(rows: ExcelRow[], partnerId?: string): Promise<{ created: number; updated: number; errors: number; errors: string[] }> {
+async function importStudents(rows: ExcelRow[], partnerId?: string): Promise<ImportFunctionResult> {
   let created = 0;
   let updated = 0;
   let errors = 0;
@@ -335,11 +342,11 @@ async function importStudents(rows: ExcelRow[], partnerId?: string): Promise<{ c
     }
   }
 
-  return { created, updated, errors, errors: errorMessages };
+  return { created, updated, errors, errorMessages };
 }
 
 // Import supervisors from Excel
-async function importSupervisors(rows: ExcelRow[], partnerId?: string): Promise<{ created: number; updated: number; errors: number; errors: string[] }> {
+async function importSupervisors(rows: ExcelRow[], partnerId?: string): Promise<ImportFunctionResult> {
   let created = 0;
   let updated = 0;
   let errors = 0;
@@ -460,7 +467,7 @@ async function importSupervisors(rows: ExcelRow[], partnerId?: string): Promise<
     }
   }
 
-  return { created, updated, errors, errors: errorMessages };
+  return { created, updated, errors, errorMessages };
 }
 
 // Main import endpoint
@@ -494,6 +501,11 @@ router.post('/excel', authenticate, upload.single('file'), async (req: Authentic
     // Process each sheet
     for (const sheetName of sheetNames) {
       const worksheet = workbook.Sheets[sheetName];
+      if (!worksheet) {
+        console.log(`Sheet ${sheetName} not found, skipping`);
+        continue;
+      }
+      
       const rows: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet);
 
       if (rows.length === 0) {
@@ -508,7 +520,7 @@ router.post('/excel', authenticate, upload.single('file'), async (req: Authentic
           case 'partners':
             const partnerResult = await importPartners(rows, partnerId);
             result.data.partners = partnerResult;
-            result.errors.push(...partnerResult.errors);
+            result.errors.push(...partnerResult.errorMessages);
             break;
 
           case 'aziende':
@@ -516,7 +528,7 @@ router.post('/excel', authenticate, upload.single('file'), async (req: Authentic
           case 'company':
             const companyResult = await importCompanies(rows, partnerId);
             result.data.companies = companyResult;
-            result.errors.push(...companyResult.errors);
+            result.errors.push(...companyResult.errorMessages);
             break;
 
           case 'clienti':
@@ -524,7 +536,7 @@ router.post('/excel', authenticate, upload.single('file'), async (req: Authentic
           case 'student':
             const studentResult = await importStudents(rows, partnerId);
             result.data.students = studentResult;
-            result.errors.push(...studentResult.errors);
+            result.errors.push(...studentResult.errorMessages);
             break;
 
           case 'supervisori':
@@ -532,7 +544,7 @@ router.post('/excel', authenticate, upload.single('file'), async (req: Authentic
           case 'supervisor':
             const supervisorResult = await importSupervisors(rows, partnerId);
             result.data.supervisors = supervisorResult;
-            result.errors.push(...supervisorResult.errors);
+            result.errors.push(...supervisorResult.errorMessages);
             break;
 
           case 'lista':
@@ -624,25 +636,25 @@ async function processUnifiedList(rows: ExcelRow[], partnerId?: string): Promise
   if (partnerRows.length > 0) {
     const partnerResult = await importPartners(partnerRows, partnerId);
     result.partners = partnerResult;
-    result.errors.push(...partnerResult.errors);
+    result.errors.push(...partnerResult.errorMessages);
   }
 
   if (companyRows.length > 0) {
     const companyResult = await importCompanies(companyRows, partnerId);
     result.companies = companyResult;
-    result.errors.push(...companyResult.errors);
+    result.errors.push(...companyResult.errorMessages);
   }
 
   if (studentRows.length > 0) {
     const studentResult = await importStudents(studentRows, partnerId);
     result.students = studentResult;
-    result.errors.push(...studentResult.errors);
+    result.errors.push(...studentResult.errorMessages);
   }
 
   if (supervisorRows.length > 0) {
     const supervisorResult = await importSupervisors(supervisorRows, partnerId);
     result.supervisors = supervisorResult;
-    result.errors.push(...supervisorResult.errors);
+    result.errors.push(...supervisorResult.errorMessages);
   }
 
   return result;
