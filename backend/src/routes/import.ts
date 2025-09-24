@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
-import { supabase } from '../index.js';
+import { adminSupabase } from '../index.js';
 import { authenticate, type AuthenticatedRequest } from '../middleware/auth.js';
 import { CustomError } from '../middleware/errorHandler.js';
 import multer from 'multer';
@@ -71,68 +71,92 @@ function isValidEmail(email: string): boolean {
 
 // Helper function to validate phone
 function isValidPhone(phone: string): boolean {
-  const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,20}$/;
+  const phoneRegex = /^[+]?[0-9\s\-()]{7,20}$/;
   return phoneRegex.test(phone);
 }
 
-// Import partners from Excel
-async function importPartners(rows: ExcelRow[], partnerId?: string): Promise<ImportFunctionResult> {
+// Import partners from Excel - OPTIMIZED VERSION
+async function importPartners(rows: ExcelRow[], _partnerId?: string): Promise<ImportFunctionResult> {
   let created = 0;
   let updated = 0;
   let errors = 0;
   const errorMessages: string[] = [];
 
-  for (const row of rows) {
+  // Batch process partners
+  const partnersToInsert: any[] = [];
+
+  // First pass: collect all partners and check existing ones
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+    
     try {
       const name = cleanData(row['Nome Partner'] || row['Partner'] || row['Nome']);
       
       if (!name) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Nome partner mancante`);
+        errorMessages.push(`Riga ${i + 1}: Nome partner mancante`);
         continue;
       }
 
-      // Check if partner already exists
-      const { data: existingPartner } = await supabase
-        .from('partners')
-        .select('id')
-        .eq('name', name)
-        .single();
-
-      if (existingPartner) {
-        updated++;
-      } else {
-        const { error } = await supabase
-          .from('partners')
-          .insert({
-            id: uuidv4(),
-            name: name,
-          });
-
-        if (error) {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore creazione partner - ${error.message}`);
-        } else {
-          created++;
-        }
-      }
+      partnersToInsert.push({ name });
     } catch (error) {
       errors++;
-      errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore generico - ${error}`);
+      errorMessages.push(`Riga ${i + 1}: Errore generico - ${error}`);
     }
   }
+
+  if (partnersToInsert.length === 0) {
+    return { created, updated, errors, errorMessages };
+  }
+
+  // Batch check existing partners
+  const partnerNames = partnersToInsert.map(p => p.name);
+  const { data: existingPartners } = await adminSupabase
+    .from('partners')
+    .select('id, name')
+    .in('name', partnerNames);
+
+  const existingPartnerMap = new Map(existingPartners?.map(p => [p.name, p.id]) || []);
+
+  // Separate inserts and updates
+  const toInsert = partnersToInsert.filter(p => !existingPartnerMap.has(p.name));
+  const toUpdate = partnersToInsert.filter(p => existingPartnerMap.has(p.name));
+
+  // Batch insert new partners
+  if (toInsert.length > 0) {
+    const { error: insertError } = await adminSupabase
+      .from('partners')
+      .insert(toInsert.map(p => ({ id: uuidv4(), name: p.name })));
+
+    if (insertError) {
+      errors += toInsert.length;
+      errorMessages.push(`Errore batch creazione partner: ${insertError.message}`);
+    } else {
+      created = toInsert.length;
+    }
+  }
+
+  // Count updates (no actual update needed for partners, just count)
+  updated = toUpdate.length;
 
   return { created, updated, errors, errorMessages };
 }
 
-// Import companies from Excel
+// Import companies from Excel - OPTIMIZED VERSION
 async function importCompanies(rows: ExcelRow[], partnerId?: string): Promise<ImportFunctionResult> {
   let created = 0;
   let updated = 0;
   let errors = 0;
   const errorMessages: string[] = [];
 
-  for (const row of rows) {
+  // Batch process companies
+  const companiesToProcess: any[] = [];
+  const partnerNames = new Set<string>();
+
+  // First pass: collect and validate data
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
     try {
       const name = cleanData(row['Nome Azienda'] || row['Azienda'] || row['Nome']);
       const address = cleanData(row['Indirizzo'] || row['Address']);
@@ -142,108 +166,176 @@ async function importCompanies(rows: ExcelRow[], partnerId?: string): Promise<Im
 
       if (!name) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Nome azienda mancante`);
+        errorMessages.push(`Riga ${i + 1}: Nome azienda mancante`);
         continue;
       }
 
       // Validate email if provided
       if (email && !isValidEmail(email)) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Email non valida - ${email}`);
+        errorMessages.push(`Riga ${i + 1}: Email non valida - ${email}`);
         continue;
       }
 
       // Validate phone if provided
       if (phone && !isValidPhone(phone)) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Telefono non valido - ${phone}`);
+        errorMessages.push(`Riga ${i + 1}: Telefono non valido - ${phone}`);
         continue;
       }
 
-      // Get partner ID
-      let partnerIdToUse = partnerId;
-      if (partnerName && !partnerIdToUse) {
-        const { data: partner } = await supabase
-          .from('partners')
-          .select('id')
-          .eq('name', partnerName)
-          .single();
-        
-        if (partner) {
-          partnerIdToUse = partner.id;
-        } else {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Partner non trovato - ${partnerName}`);
-          continue;
-        }
-      }
-
-      if (!partnerIdToUse) {
-        errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Partner ID mancante`);
-        continue;
-      }
-
-      // Check if company already exists
-      const { data: existingCompany } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('name', name)
-        .eq('partner_id', partnerIdToUse)
-        .single();
-
-      const companyData = {
+      companiesToProcess.push({
         name,
         address: address || null,
         phone: phone || null,
         email: email || null,
-        partner_id: partnerIdToUse,
-      };
+        partnerName,
+        rowIndex: i + 1
+      });
 
-      if (existingCompany) {
-        const { error } = await supabase
-          .from('companies')
-          .update(companyData)
-          .eq('id', existingCompany.id);
-
-        if (error) {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore aggiornamento azienda - ${error.message}`);
-        } else {
-          updated++;
-        }
-      } else {
-        const { error } = await supabase
-          .from('companies')
-          .insert({
-            id: uuidv4(),
-            ...companyData,
-          });
-
-        if (error) {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore creazione azienda - ${error.message}`);
-        } else {
-          created++;
-        }
+      if (partnerName) {
+        partnerNames.add(partnerName);
       }
     } catch (error) {
       errors++;
-      errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore generico - ${error}`);
+      errorMessages.push(`Riga ${i + 1}: Errore generico - ${error}`);
+    }
+  }
+
+  if (companiesToProcess.length === 0) {
+    return { created, updated, errors, errorMessages };
+  }
+
+  // Batch fetch partners
+  const partnerMap = new Map<string, string>();
+  if (partnerNames.size > 0) {
+    const { data: partners } = await adminSupabase
+      .from('partners')
+      .select('id, name')
+      .in('name', Array.from(partnerNames));
+
+    partners?.forEach(p => partnerMap.set(p.name, p.id));
+  }
+
+  // Process companies with partner resolution
+  const companiesToInsert: any[] = [];
+  const companyKeys = new Set<string>();
+
+  for (const company of companiesToProcess) {
+    let partnerIdToUse = partnerId;
+    
+    if (company.partnerName && !partnerIdToUse) {
+      const partnerId = partnerMap.get(company.partnerName);
+      if (partnerId) {
+        partnerIdToUse = partnerId;
+      } else {
+        errors++;
+        errorMessages.push(`Riga ${company.rowIndex}: Partner non trovato - ${company.partnerName}`);
+        continue;
+      }
+    }
+
+    if (!partnerIdToUse) {
+      errors++;
+      errorMessages.push(`Riga ${company.rowIndex}: Partner ID mancante`);
+      continue;
+    }
+
+    const companyKey = `${company.name}-${partnerIdToUse}`;
+    if (companyKeys.has(companyKey)) {
+      continue; // Skip duplicates
+    }
+    companyKeys.add(companyKey);
+
+    companiesToInsert.push({
+      id: uuidv4(),
+      name: company.name,
+      address: company.address,
+      phone: company.phone,
+      email: company.email,
+      partner_id: partnerIdToUse,
+    });
+  }
+
+  // Batch check existing companies
+  if (companiesToInsert.length > 0) {
+    const companyNames = companiesToInsert.map(c => c.name);
+    const partnerIds = companiesToInsert.map(c => c.partner_id);
+    
+    const { data: existingCompanies } = await adminSupabase
+      .from('companies')
+      .select('id, name, partner_id')
+      .in('name', companyNames)
+      .in('partner_id', partnerIds);
+
+    const existingCompanyMap = new Map(
+      existingCompanies?.map(c => [`${c.name}-${c.partner_id}`, c.id]) || []
+    );
+
+    // Separate inserts and updates
+    const toInsert = companiesToInsert.filter(c => 
+      !existingCompanyMap.has(`${c.name}-${c.partner_id}`)
+    );
+    const toUpdate = companiesToInsert.filter(c => 
+      existingCompanyMap.has(`${c.name}-${c.partner_id}`)
+    );
+
+    // Batch insert new companies
+    if (toInsert.length > 0) {
+      const { error: insertError } = await adminSupabase
+        .from('companies')
+        .insert(toInsert);
+
+      if (insertError) {
+        errors += toInsert.length;
+        errorMessages.push(`Errore batch creazione aziende: ${insertError.message}`);
+      } else {
+        created = toInsert.length;
+      }
+    }
+
+    // Batch update existing companies
+    if (toUpdate.length > 0) {
+      for (const company of toUpdate) {
+        const existingId = existingCompanyMap.get(`${company.name}-${company.partner_id}`);
+        if (existingId) {
+          const { error: updateError } = await adminSupabase
+            .from('companies')
+            .update({
+              address: company.address,
+              phone: company.phone,
+              email: company.email,
+            })
+            .eq('id', existingId);
+
+          if (updateError) {
+            errors++;
+            errorMessages.push(`Errore aggiornamento azienda ${company.name}: ${updateError.message}`);
+          } else {
+            updated++;
+          }
+        }
+      }
     }
   }
 
   return { created, updated, errors, errorMessages };
 }
 
-// Import students from Excel
+// Import students from Excel - OPTIMIZED VERSION
 async function importStudents(rows: ExcelRow[], partnerId?: string): Promise<ImportFunctionResult> {
   let created = 0;
   let updated = 0;
   let errors = 0;
   const errorMessages: string[] = [];
 
-  for (const row of rows) {
+  // Batch process students
+  const studentsToProcess: any[] = [];
+  const partnerNames = new Set<string>();
+
+  // First pass: collect and validate data
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
     try {
       const name = cleanData(row['Nome Studente'] || row['Studente'] || row['Nome']);
       const email = cleanData(row['Email']);
@@ -252,107 +344,174 @@ async function importStudents(rows: ExcelRow[], partnerId?: string): Promise<Imp
 
       if (!name || !email) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Nome o email studente mancanti`);
+        errorMessages.push(`Riga ${i + 1}: Nome o email studente mancanti`);
         continue;
       }
 
       // Validate email
       if (!isValidEmail(email)) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Email non valida - ${email}`);
+        errorMessages.push(`Riga ${i + 1}: Email non valida - ${email}`);
         continue;
       }
 
       // Validate phone if provided
       if (phone && !isValidPhone(phone)) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Telefono non valido - ${phone}`);
+        errorMessages.push(`Riga ${i + 1}: Telefono non valido - ${phone}`);
         continue;
       }
 
-      // Get partner ID
-      let partnerIdToUse = partnerId;
-      if (partnerName && !partnerIdToUse) {
-        const { data: partner } = await supabase
-          .from('partners')
-          .select('id')
-          .eq('name', partnerName)
-          .single();
-        
-        if (partner) {
-          partnerIdToUse = partner.id;
-        } else {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Partner non trovato - ${partnerName}`);
-          continue;
-        }
-      }
-
-      if (!partnerIdToUse) {
-        errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Partner ID mancante`);
-        continue;
-      }
-
-      // Check if student already exists
-      const { data: existingStudent } = await supabase
-        .from('students')
-        .select('id')
-        .eq('email', email)
-        .eq('partner_id', partnerIdToUse)
-        .single();
-
-      const studentData = {
+      studentsToProcess.push({
         name,
         email,
         phone: phone || null,
-        partner_id: partnerIdToUse,
-      };
+        partnerName,
+        rowIndex: i + 1
+      });
 
-      if (existingStudent) {
-        const { error } = await supabase
-          .from('students')
-          .update(studentData)
-          .eq('id', existingStudent.id);
-
-        if (error) {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore aggiornamento studente - ${error.message}`);
-        } else {
-          updated++;
-        }
-      } else {
-        const { error } = await supabase
-          .from('students')
-          .insert({
-            id: uuidv4(),
-            ...studentData,
-          });
-
-        if (error) {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore creazione studente - ${error.message}`);
-        } else {
-          created++;
-        }
+      if (partnerName) {
+        partnerNames.add(partnerName);
       }
     } catch (error) {
       errors++;
-      errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore generico - ${error}`);
+      errorMessages.push(`Riga ${i + 1}: Errore generico - ${error}`);
+    }
+  }
+
+  if (studentsToProcess.length === 0) {
+    return { created, updated, errors, errorMessages };
+  }
+
+  // Batch fetch partners
+  const partnerMap = new Map<string, string>();
+  if (partnerNames.size > 0) {
+    const { data: partners } = await adminSupabase
+      .from('partners')
+      .select('id, name')
+      .in('name', Array.from(partnerNames));
+
+    partners?.forEach(p => partnerMap.set(p.name, p.id));
+  }
+
+  // Process students with partner resolution
+  const studentsToInsert: any[] = [];
+  const studentKeys = new Set<string>();
+
+  for (const student of studentsToProcess) {
+    let partnerIdToUse = partnerId;
+    
+    if (student.partnerName && !partnerIdToUse) {
+      const partnerId = partnerMap.get(student.partnerName);
+      if (partnerId) {
+        partnerIdToUse = partnerId;
+      } else {
+        errors++;
+        errorMessages.push(`Riga ${student.rowIndex}: Partner non trovato - ${student.partnerName}`);
+        continue;
+      }
+    }
+
+    if (!partnerIdToUse) {
+      errors++;
+      errorMessages.push(`Riga ${student.rowIndex}: Partner ID mancante`);
+      continue;
+    }
+
+    const studentKey = `${student.email}-${partnerIdToUse}`;
+    if (studentKeys.has(studentKey)) {
+      continue; // Skip duplicates
+    }
+    studentKeys.add(studentKey);
+
+    studentsToInsert.push({
+      id: uuidv4(),
+      name: student.name,
+      email: student.email,
+      phone: student.phone,
+      partner_id: partnerIdToUse,
+    });
+  }
+
+  // Batch check existing students
+  if (studentsToInsert.length > 0) {
+    const studentEmails = studentsToInsert.map(s => s.email);
+    const partnerIds = studentsToInsert.map(s => s.partner_id);
+    
+    const { data: existingStudents } = await adminSupabase
+      .from('students')
+      .select('id, email, partner_id')
+      .in('email', studentEmails)
+      .in('partner_id', partnerIds);
+
+    const existingStudentMap = new Map(
+      existingStudents?.map(s => [`${s.email}-${s.partner_id}`, s.id]) || []
+    );
+
+    // Separate inserts and updates
+    const toInsert = studentsToInsert.filter(s => 
+      !existingStudentMap.has(`${s.email}-${s.partner_id}`)
+    );
+    const toUpdate = studentsToInsert.filter(s => 
+      existingStudentMap.has(`${s.email}-${s.partner_id}`)
+    );
+
+    // Batch insert new students
+    if (toInsert.length > 0) {
+      const { error: insertError } = await adminSupabase
+        .from('students')
+        .insert(toInsert);
+
+      if (insertError) {
+        errors += toInsert.length;
+        errorMessages.push(`Errore batch creazione studenti: ${insertError.message}`);
+      } else {
+        created = toInsert.length;
+      }
+    }
+
+    // Batch update existing students
+    if (toUpdate.length > 0) {
+      for (const student of toUpdate) {
+        const existingId = existingStudentMap.get(`${student.email}-${student.partner_id}`);
+        if (existingId) {
+          const { error: updateError } = await adminSupabase
+            .from('students')
+            .update({
+              name: student.name,
+              phone: student.phone,
+            })
+            .eq('id', existingId);
+
+          if (updateError) {
+            errors++;
+            errorMessages.push(`Errore aggiornamento studente ${student.email}: ${updateError.message}`);
+          } else {
+            updated++;
+          }
+        }
+      }
     }
   }
 
   return { created, updated, errors, errorMessages };
 }
 
-// Import supervisors from Excel
+// Import supervisors from Excel - OPTIMIZED VERSION
 async function importSupervisors(rows: ExcelRow[], partnerId?: string): Promise<ImportFunctionResult> {
   let created = 0;
   let updated = 0;
   let errors = 0;
   const errorMessages: string[] = [];
 
-  for (const row of rows) {
+  // Batch process supervisors
+  const supervisorsToProcess: any[] = [];
+  const partnerNames = new Set<string>();
+  const companyNames = new Set<string>();
+
+  // First pass: collect and validate data
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
     try {
       const name = cleanData(row['Nome Supervisore'] || row['Supervisore'] || row['Nome']);
       const email = cleanData(row['Email']);
@@ -362,108 +521,175 @@ async function importSupervisors(rows: ExcelRow[], partnerId?: string): Promise<
 
       if (!name || !email || !companyName) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Nome, email o azienda supervisore mancanti`);
+        errorMessages.push(`Riga ${i + 1}: Nome, email o azienda supervisore mancanti`);
         continue;
       }
 
       // Validate email
       if (!isValidEmail(email)) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Email non valida - ${email}`);
+        errorMessages.push(`Riga ${i + 1}: Email non valida - ${email}`);
         continue;
       }
 
       // Validate phone if provided
       if (phone && !isValidPhone(phone)) {
         errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Telefono non valido - ${phone}`);
+        errorMessages.push(`Riga ${i + 1}: Telefono non valido - ${phone}`);
         continue;
       }
 
-      // Get partner ID
-      let partnerIdToUse = partnerId;
-      if (partnerName && !partnerIdToUse) {
-        const { data: partner } = await supabase
-          .from('partners')
-          .select('id')
-          .eq('name', partnerName)
-          .single();
-        
-        if (partner) {
-          partnerIdToUse = partner.id;
-        } else {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Partner non trovato - ${partnerName}`);
-          continue;
-        }
-      }
-
-      if (!partnerIdToUse) {
-        errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Partner ID mancante`);
-        continue;
-      }
-
-      // Get company ID
-      const { data: company } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('name', companyName)
-        .eq('partner_id', partnerIdToUse)
-        .single();
-
-      if (!company) {
-        errors++;
-        errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Azienda non trovata - ${companyName}`);
-        continue;
-      }
-
-      // Check if supervisor already exists
-      const { data: existingSupervisor } = await supabase
-        .from('supervisors')
-        .select('id')
-        .eq('email', email)
-        .eq('company_id', company.id)
-        .single();
-
-      const supervisorData = {
+      supervisorsToProcess.push({
         name,
         email,
         phone: phone || null,
-        company_id: company.id,
-        partner_id: partnerIdToUse,
-      };
+        companyName,
+        partnerName,
+        rowIndex: i + 1
+      });
 
-      if (existingSupervisor) {
-        const { error } = await supabase
-          .from('supervisors')
-          .update(supervisorData)
-          .eq('id', existingSupervisor.id);
-
-        if (error) {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore aggiornamento supervisore - ${error.message}`);
-        } else {
-          updated++;
-        }
-      } else {
-        const { error } = await supabase
-          .from('supervisors')
-          .insert({
-            id: uuidv4(),
-            ...supervisorData,
-          });
-
-        if (error) {
-          errors++;
-          errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore creazione supervisore - ${error.message}`);
-        } else {
-          created++;
-        }
+      if (partnerName) {
+        partnerNames.add(partnerName);
       }
+      companyNames.add(companyName);
     } catch (error) {
       errors++;
-      errorMessages.push(`Riga ${rows.indexOf(row) + 1}: Errore generico - ${error}`);
+      errorMessages.push(`Riga ${i + 1}: Errore generico - ${error}`);
+    }
+  }
+
+  if (supervisorsToProcess.length === 0) {
+    return { created, updated, errors, errorMessages };
+  }
+
+  // Batch fetch partners and companies
+  const partnerMap = new Map<string, string>();
+  if (partnerNames.size > 0) {
+    const { data: partners } = await adminSupabase
+      .from('partners')
+      .select('id, name')
+      .in('name', Array.from(partnerNames));
+
+    partners?.forEach(p => partnerMap.set(p.name, p.id));
+  }
+
+  const companyMap = new Map<string, string>();
+  if (companyNames.size > 0) {
+    const { data: companies } = await adminSupabase
+      .from('companies')
+      .select('id, name, partner_id')
+      .in('name', Array.from(companyNames));
+
+    companies?.forEach(c => companyMap.set(`${c.name}-${c.partner_id}`, c.id));
+  }
+
+  // Process supervisors with partner and company resolution
+  const supervisorsToInsert: any[] = [];
+  const supervisorKeys = new Set<string>();
+
+  for (const supervisor of supervisorsToProcess) {
+    let partnerIdToUse = partnerId;
+    
+    if (supervisor.partnerName && !partnerIdToUse) {
+      const partnerId = partnerMap.get(supervisor.partnerName);
+      if (partnerId) {
+        partnerIdToUse = partnerId;
+      } else {
+        errors++;
+        errorMessages.push(`Riga ${supervisor.rowIndex}: Partner non trovato - ${supervisor.partnerName}`);
+        continue;
+      }
+    }
+
+    if (!partnerIdToUse) {
+      errors++;
+      errorMessages.push(`Riga ${supervisor.rowIndex}: Partner ID mancante`);
+      continue;
+    }
+
+    // Get company ID
+    const companyKey = `${supervisor.companyName}-${partnerIdToUse}`;
+    const companyId = companyMap.get(companyKey);
+    if (!companyId) {
+      errors++;
+      errorMessages.push(`Riga ${supervisor.rowIndex}: Azienda non trovata - ${supervisor.companyName}`);
+      continue;
+    }
+
+    const supervisorKey = `${supervisor.email}-${companyId}`;
+    if (supervisorKeys.has(supervisorKey)) {
+      continue; // Skip duplicates
+    }
+    supervisorKeys.add(supervisorKey);
+
+    supervisorsToInsert.push({
+      id: uuidv4(),
+      name: supervisor.name,
+      email: supervisor.email,
+      phone: supervisor.phone,
+      company_id: companyId,
+      partner_id: partnerIdToUse,
+    });
+  }
+
+  // Batch check existing supervisors
+  if (supervisorsToInsert.length > 0) {
+    const supervisorEmails = supervisorsToInsert.map(s => s.email);
+    const companyIds = supervisorsToInsert.map(s => s.company_id);
+    
+    const { data: existingSupervisors } = await adminSupabase
+      .from('supervisors')
+      .select('id, email, company_id')
+      .in('email', supervisorEmails)
+      .in('company_id', companyIds);
+
+    const existingSupervisorMap = new Map(
+      existingSupervisors?.map(s => [`${s.email}-${s.company_id}`, s.id]) || []
+    );
+
+    // Separate inserts and updates
+    const toInsert = supervisorsToInsert.filter(s => 
+      !existingSupervisorMap.has(`${s.email}-${s.company_id}`)
+    );
+    const toUpdate = supervisorsToInsert.filter(s => 
+      existingSupervisorMap.has(`${s.email}-${s.company_id}`)
+    );
+
+    // Batch insert new supervisors
+    if (toInsert.length > 0) {
+      const { error: insertError } = await adminSupabase
+        .from('supervisors')
+        .insert(toInsert);
+
+      if (insertError) {
+        errors += toInsert.length;
+        errorMessages.push(`Errore batch creazione supervisori: ${insertError.message}`);
+      } else {
+        created = toInsert.length;
+      }
+    }
+
+    // Batch update existing supervisors
+    if (toUpdate.length > 0) {
+      for (const supervisor of toUpdate) {
+        const existingId = existingSupervisorMap.get(`${supervisor.email}-${supervisor.company_id}`);
+        if (existingId) {
+          const { error: updateError } = await adminSupabase
+            .from('supervisors')
+            .update({
+              name: supervisor.name,
+              phone: supervisor.phone,
+            })
+            .eq('id', existingId);
+
+          if (updateError) {
+            errors++;
+            errorMessages.push(`Errore aggiornamento supervisore ${supervisor.email}: ${updateError.message}`);
+          } else {
+            updated++;
+          }
+        }
+      }
     }
   }
 

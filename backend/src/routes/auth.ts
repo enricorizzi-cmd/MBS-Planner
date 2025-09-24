@@ -1,23 +1,9 @@
 import { Router } from 'express';
-import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
-import { supabase } from '../index.js';
+import { supabase, adminSupabase } from '../index.js';
 import { config } from '../config.js';
 import { authenticate, type AuthenticatedRequest } from '../middleware/auth.js';
 import { CustomError } from '../middleware/errorHandler.js';
 import { loginSchema, registerSchema, changePasswordSchema } from '../schemas/auth.js';
-
-// Create admin client with service role key for bypassing RLS
-const adminSupabase = createClient(
-  config.supabase.url,
-  config.supabase.serviceRoleKey,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
 
 const router = Router();
 

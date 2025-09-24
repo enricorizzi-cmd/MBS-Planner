@@ -30,6 +30,18 @@ export const supabase = createClient(
   config.supabase.serviceRoleKey
 );
 
+// Admin client for server-side operations (uses service role key)
+export const adminSupabase = createClient(
+  config.supabase.url,
+  config.supabase.serviceRoleKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
