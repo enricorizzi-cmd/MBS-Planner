@@ -157,6 +157,11 @@ async function importCompanies(rows: ExcelRow[], partnerId?: string): Promise<Im
   // First pass: collect and validate data
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
+    if (!row) {
+      errors++;
+      errorMessages.push(`Riga ${i + 1}: Dati azienda mancanti nel file`);
+      continue;
+    }
     try {
       const name = cleanData(row['Nome Azienda'] || row['Azienda'] || row['Nome']);
       const address = cleanData(row['Indirizzo'] || row['Address']);
@@ -336,6 +341,11 @@ async function importStudents(rows: ExcelRow[], partnerId?: string): Promise<Imp
   // First pass: collect and validate data
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
+    if (!row) {
+      errors++;
+      errorMessages.push(`Riga ${i + 1}: Dati studente mancanti nel file`);
+      continue;
+    }
     try {
       const name = cleanData(row['Nome Studente'] || row['Studente'] || row['Nome']);
       const email = cleanData(row['Email']);
@@ -512,6 +522,11 @@ async function importSupervisors(rows: ExcelRow[], partnerId?: string): Promise<
   // First pass: collect and validate data
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
+    if (!row) {
+      errors++;
+      errorMessages.push(`Riga ${i + 1}: Dati supervisore mancanti nel file`);
+      continue;
+    }
     try {
       const name = cleanData(row['Nome Supervisore'] || row['Supervisore'] || row['Nome']);
       const email = cleanData(row['Email']);
